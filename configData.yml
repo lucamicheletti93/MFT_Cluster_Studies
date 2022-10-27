@@ -1,0 +1,9 @@
+input:
+    run_list_file: run_list.txt
+    alien_input_path: /alice/data/2022/LHC22m/521326/raw/1630
+    local_input_path: /home/lmichele/GITHUB/MFT_Cluster_Studies/CTF
+    ctf_input_path: /home/lmichele/GITHUB/MFT_Cluster_Studies/CTF/tf
+    prod_type: data
+output:
+    local_output_file: MFTAssessmentData.root
+    analysis_output: MyAnalysisResultsData.root
