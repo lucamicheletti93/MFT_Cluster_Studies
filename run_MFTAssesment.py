@@ -70,65 +70,6 @@ def merge_files(inputCfg):
     print(mergeCommand)
     os.system(mergeCommand)
 
-def analysis(inputCfg):
-    '''
-    function for producing QC plots
-    '''
-    LoadStyle()
-
-    fIn = ROOT.TFile.Open(inputCfg["output"]["local_output_file"], "READ")
-    mMFTTrackMeanClusterSize = fIn.Get("mMFTTrackMeanClusterSize")
-    mMFTTrackMeanClusterSize.SetLineColor(ROOT.kBlack)
-    mMFTTrackMeanClusterSize.Rebin(10)
-    mMFTTrackMeanClusterSize.SetTitle("")
-    mMFTTrackMeanClusterSize.GetXaxis().SetRangeUser(0, 10)
-
-    mMFTTrueTrackMeanClusterSize = fIn.Get("mMFTTrueTrackMeanClusterSize")
-    mMFTTrueTrackMeanClusterSize.SetLineColor(ROOT.kBlack)
-    mMFTTrueTrackMeanClusterSize.Rebin(10)
-    mMFTTrueTrackMeanClusterSize.SetTitle("")
-    mMFTTrueTrackMeanClusterSize.GetXaxis().SetRangeUser(0, 10)
-
-    mMFTTrueTrackMeanClusterSizeNuclei = fIn.Get("mMFTTrueTrackMeanClusterSizeNuclei")
-    mMFTTrueTrackMeanClusterSizeNuclei.SetLineColor(ROOT.kRed+1)
-    mMFTTrueTrackMeanClusterSizeNuclei.SetFillColorAlpha(ROOT.kRed+1, 0.5)
-    mMFTTrueTrackMeanClusterSizeNuclei.Rebin(10)
-
-    mMFTTrueTrackMeanClusterSizeNonNuclei = fIn.Get("mMFTTrueTrackMeanClusterSizeNonNuclei")
-    mMFTTrueTrackMeanClusterSizeNonNuclei.SetLineColor(ROOT.kAzure+2)
-    mMFTTrueTrackMeanClusterSizeNonNuclei.SetFillColorAlpha(ROOT.kAzure+2, 0.5)
-    mMFTTrueTrackMeanClusterSizeNonNuclei.Rebin(10)
-
-    histRatioNuclei = mMFTTrueTrackMeanClusterSizeNuclei.Clone("histRatioNuclei")
-    histRatioNuclei.Divide(mMFTTrueTrackMeanClusterSize)
-
-    histRatioNonNuclei = mMFTTrueTrackMeanClusterSizeNonNuclei.Clone("histRatioNonNuclei")
-    histRatioNonNuclei.Divide(mMFTTrueTrackMeanClusterSize)
-
-    canvasRatioNuclei = ROOT.TCanvas("canvasRatioNuclei", "canvasRatioNuclei", 800, 600)
-    histRatioNuclei.Draw()
-    histRatioNonNuclei.Draw("same")
-    canvasRatioNuclei.Update()
-
-    legend = ROOT.TLegend(0.65, 0.70, 0.85, 0.89, " ", "brNDC")
-    SetLegend(legend)
-    legend.AddEntry(mMFTTrueTrackMeanClusterSize, "All", "F")
-    legend.AddEntry(mMFTTrueTrackMeanClusterSizeNuclei, "Nuclei (Z = 2)", "F")
-    legend.AddEntry(mMFTTrueTrackMeanClusterSizeNonNuclei, "Non-Nuclei (Z = 1)", "F")
-
-    canvas = ROOT.TCanvas("canvas", "canvas", 800, 600)
-    mMFTTrueTrackMeanClusterSize.Draw("H")
-    mMFTTrueTrackMeanClusterSizeNuclei.Draw("Hsame")
-    mMFTTrueTrackMeanClusterSizeNonNuclei.Draw("Hsame")
-    legend.Draw("same")
-    canvas.Update()
-    #canvas.SaveAs("mean_cluster_size_per_track.pdf")
-
-    fOut = ROOT.TFile.Open(inputCfg["output"]["analysis_output"], "RECREATE")
-    canvas.Write()
-    mMFTTrackMeanClusterSize.Write()
-    fOut.Close()
-
 def main():
     parser = argparse.ArgumentParser(description='Arguments to pass')
     parser.add_argument('cfgFileName', metavar='text', default='config.yml', help='config file name')
@@ -136,7 +77,6 @@ def main():
     parser.add_argument("--run_full", help="run over all the available files", action="store_true")
     parser.add_argument("--run_test", help="run over a part of the sample", action="store_true")
     parser.add_argument("--merge", help="merge all the files produced", action="store_true")
-    parser.add_argument("--analysis", help="plot results", action="store_true")
     args = parser.parse_args()
 
 
@@ -153,7 +93,5 @@ def main():
         run_mft_assesment(inputCfg, "test")
     if args.merge:
         merge_files(inputCfg)
-    if args.analysis:
-        analysis(inputCfg)
 
 main()

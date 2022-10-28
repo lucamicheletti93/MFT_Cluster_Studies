@@ -23,6 +23,18 @@ def SetLegend(legend):
     legend.SetTextFont(42)
     legend.SetTextSize(0.04)
 
+def SetHistStyle(hist):
+    hist.SetTitle("")
+    hist.GetXaxis().SetRangeUser(0, 8)
+    hist.GetXaxis().SetLabelSize(0.045)
+    hist.GetXaxis().SetTitle("<Cl size>")
+    hist.GetXaxis().SetTitleOffset(1.2)
+    hist.GetXaxis().SetTitleSize(0.05)
+    hist.GetYaxis().SetLabelSize(0.045)
+    hist.GetYaxis().SetTitle("Entries")
+    hist.GetYaxis().SetTitleOffset(1.2)
+    hist.GetYaxis().SetTitleSize(0.05)
+
 def LoadStyle():
     gStyle.SetOptStat(0)
     gStyle.SetPadLeftMargin(0.15)

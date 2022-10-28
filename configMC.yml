@@ -5,5 +5,5 @@ input:
     macro_to_run: ReadMCJPsi_Grid.C
     prod_type: mc
 output:
-    local_output_file: MFTAssessmentMC.root
+    local_output_file: output/MFTAssessmentMC.root
     analysis_output: MyAnalysisResultsMC.root

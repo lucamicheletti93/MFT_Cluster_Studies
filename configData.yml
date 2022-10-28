@@ -5,5 +5,5 @@ input:
     ctf_input_path: /home/lmichele/GITHUB/MFT_Cluster_Studies/CTF/tf
     prod_type: data
 output:
-    local_output_file: MFTAssessmentData.root
+    local_output_file: output/MFTAssessmentData.root
     analysis_output: MyAnalysisResultsData.root
