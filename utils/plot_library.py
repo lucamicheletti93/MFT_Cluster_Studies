@@ -25,9 +25,7 @@ def SetLegend(legend):
 
 def SetHistStyle(hist):
     hist.SetTitle("")
-    hist.GetXaxis().SetRangeUser(0, 8)
     hist.GetXaxis().SetLabelSize(0.045)
-    hist.GetXaxis().SetTitle("<Cl size>")
     hist.GetXaxis().SetTitleOffset(1.2)
     hist.GetXaxis().SetTitleSize(0.05)
     hist.GetYaxis().SetLabelSize(0.045)
