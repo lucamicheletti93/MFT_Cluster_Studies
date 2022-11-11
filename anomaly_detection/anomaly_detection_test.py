@@ -73,38 +73,39 @@ history = model.fit(normal_train_data, normal_train_data, epochs=50, batch_size=
 encoder_out = model.encoder(normal_test_data).numpy() #8 unit representation of data
 decoder_out = model.decoder(encoder_out).numpy()
 
-#plt.plot(normal_test_data[0], 'b')
-#plt.plot(decoder_out[0], 'r')
-#plt.title("Model performance on Normal data")
-#plt.show()
-#plt.savefig("Model_Performance_Normal.pdf")
-
 encoder_out_a = model.encoder(anomaly_test_data).numpy() #8 unit representation of data
 decoder_out_a = model.decoder(encoder_out_a).numpy()
 
-#plt.plot(anomaly_test_data[0], 'b')
-#plt.plot(decoder_out_a[0], 'r')
-#plt.title("Model performance on Anomaly Data")
-#plt.show()
-#plt.savefig("Model_Performance_Anomaly.pdf")
-
 reconstruction = model.predict(normal_test_data)
 train_loss = tf.keras.losses.mae(reconstruction, normal_test_data)
-plt.hist(train_loss, bins=50)
 
 threshold = np.mean(train_loss) + 2*np.std(train_loss)
 reconstruction_a = model.predict(anomaly_test_data)
 train_loss_a = tf.keras.losses.mae(reconstruction_a, anomaly_test_data)
 
-plt.hist(train_loss_a, bins=50)
-plt.title("loss on anomaly test data")
-plt.show()
-plt.savefig("Loss_On_Anomaly.pdf")
+fig = plt.figure()
+plt1 = fig.add_subplot(221)
+plt2 = fig.add_subplot(222)
+plt3 = fig.add_subplot(223)
+plt4 = fig.add_subplot(224)
 
-plt.hist(train_loss, bins=50, label='normal')
-plt.hist(train_loss_a, bins=50, label='anomaly')
-plt.axvline(threshold, color='r', linewidth=3, linestyle='dashed', label='{:0.3f}'.format(threshold))
-plt.legend(loc='upper right')
-plt.title("Normal and Anomaly Loss")
-plt.show()
-plt.savefig("Normal_And_Anomaly_Loss.pdf")
+plt1.plot(normal_test_data[0], 'b')
+plt1.plot(decoder_out[0], 'r')
+plt1.set_title("Model performance on Normal data")
+
+plt2.plot(anomaly_test_data[0], 'b')
+plt2.plot(decoder_out_a[0], 'r')
+plt2.set_title("Model performance on Anomaly data")
+
+plt3.hist(train_loss_a, bins=50)
+plt3.set_title("loss on anomaly test data")
+
+plt4.hist(train_loss, bins=50, label='normal')
+plt4.hist(train_loss_a, bins=50, label='anomaly')
+plt4.axvline(threshold, color='r', linewidth=3, linestyle='dashed', label='{:0.3f}'.format(threshold))
+plt4.legend(loc='upper right')
+plt4.set_title("Normal and Anomaly Loss")
+
+fig.savefig("Results.pdf")
+
+exit()
