@@ -33,6 +33,21 @@ def SetHistStyle(hist):
     hist.GetYaxis().SetTitleOffset(1.2)
     hist.GetYaxis().SetTitleSize(0.05)
 
+def SetHistStyle2(hist, title, xaxis, yaxis, color, linewidth, fillstyle, trasparency):
+    hist.SetTitle(title)
+    hist.GetXaxis().SetLabelSize(0.045)
+    hist.GetXaxis().SetTitleOffset(1.2)
+    hist.GetXaxis().SetTitleSize(0.05)
+    hist.GetXaxis().SetTitle(xaxis)
+    hist.GetYaxis().SetLabelSize(0.045)
+    hist.GetYaxis().SetTitleOffset(1.2)
+    hist.GetYaxis().SetTitleSize(0.05)
+    hist.GetYaxis().SetTitle(yaxis)
+    hist.SetLineColor(color)
+    hist.SetLineWidth(linewidth)
+    #hist.SetFillStyle(fillstyle)
+    hist.SetFillColorAlpha(color, trasparency)
+
 def LoadStyle():
     gStyle.SetOptStat(0)
     gStyle.SetPadLeftMargin(0.15)
