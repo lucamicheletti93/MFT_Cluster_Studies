@@ -62,6 +62,8 @@ def read_sim(fInName):
 
     histMeanClsizePerTrackRecHe3 = ROOT.TH1F("histMeanClsizePerTrackRecHe3", "", 40, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecHe3, "", "<cluster size>", "Entries", ROOT.kRed+1, 2, 3001, 0.6)
+
+    effChargeMatch = ROOT.TEfficiency("effChargeMatch", "Charge Match;p_t [GeV];#epsilon", 20, 0, 10)
     
     for treeName in treeNames:
         fIn = TFile.Open(fInName)
@@ -70,10 +72,14 @@ def read_sim(fInName):
         mClsizeRec = ROOT.TTreeReaderArray(ROOT.int)(treeReaderInput, "mClsizeRec")
         mLayerRec = ROOT.TTreeReaderArray(ROOT.int)(treeReaderInput, "mLayerRec")
         mMeanClsizePerTrackRec = ROOT.TTreeReaderValue(ROOT.double)(treeReaderInput, "mMeanClsizePerTrackRec")
+        mPtGen = ROOT.TTreeReaderValue(ROOT.double)(treeReaderInput, "mPtGen")
+        mChargeGen = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mChargeGen")
         mPdgCodeGen = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPdgCodeGen")
 
         print("Processing {}...".format(fIn.GetName()))
         while treeReaderInput.Next():
+            deltaCharge = mChargeRec.Get()[0] - mChargeGen.Get()[0]
+            effChargeMatch.Fill(not deltaCharge, mPtGen.Get()[0])
             histMeanClsizePerTrackRec.Fill(mMeanClsizePerTrackRec.Get()[0])
             if abs(mPdgCodeGen.Get()[0]) == 1000020030:
                 histMeanClsizePerTrackRecHe3.Fill(mMeanClsizePerTrackRec.Get()[0])
@@ -144,6 +150,32 @@ def read_sim(fInName):
     latexTitle.DrawLatex(0.6, 0.73, "Run3 simulation")
     canvasMeanClsizePerTrackRec.Update()
     canvasMeanClsizePerTrackRec.SaveAs("MFT_clsize_mean_per_track.pdf")
+
+    # Charge efficiency reconstruction
+    histTotalChargeMatch = effChargeMatch.GetCopyTotalHisto()
+    histPassedChargeMatch = effChargeMatch.GetCopyPassedHisto()
+    histEffChargeMatch = ROOT.TH1D("histEffChargeMatch", "", 20, 0, 10)
+    histEffChargeMatch.Divide(histPassedChargeMatch, histTotalChargeMatch, 1, 1, "B")
+    histEffChargeMatch.SetMarkerColor(ROOT.kRed+1)
+    histEffChargeMatch.SetLineColor(ROOT.kRed+1)
+    histEffChargeMatch.SetLineWidth(3)
+    histEffChargeMatch.GetXaxis().SetRangeUser(0, 5)
+    histEffChargeMatch.GetXaxis().SetTitle("#it{p}_{T}^{Gen} (GeV/#it{c})")
+    histEffChargeMatch.GetYaxis().SetRangeUser(0.5, 1.2)
+    histEffChargeMatch.GetYaxis().SetTitle("Efficiency")
+
+    lineUnity = ROOT.TLine(0, 1, 5, 1)
+    lineUnity.SetLineWidth(2)
+    lineUnity.SetLineColor(ROOT.kGray+1)
+    lineUnity.SetLineStyle(ROOT.kDashed)
+
+    canvasChargeMatch = ROOT.TCanvas("canvasChargeMatch", "", 800, 600)
+    histEffChargeMatch.Draw("E")
+    lineUnity.Draw("same")
+    latexTitle.DrawLatex(0.6, 0.85, "pp #sqrt{s} = 13 TeV")
+    latexTitle.DrawLatex(0.6, 0.80, "Run3 simulation")
+    canvasChargeMatch.Update()
+    canvasChargeMatch.SaveAs("MFT_charge_match_eff.pdf")
 
     #input()
 
