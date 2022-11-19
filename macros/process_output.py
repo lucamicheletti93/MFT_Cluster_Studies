@@ -60,6 +60,15 @@ def read_sim(fInName):
     histMeanClsizePerTrackRecPiKP = ROOT.TH1F("histMeanClsizePerTrackRecPiKP", "", 40, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecPiKP, "", "<cluster size>", "Entries", ROOT.kAzure+2, 2, 3005, 0.6)
 
+    histMeanClsizePerTrackRecPi = ROOT.TH1F("histMeanClsizePerTrackRecPi", "", 40, 0., 8.)
+    SetHistStyle2(histMeanClsizePerTrackRecPi, "", "<cluster size>", "Entries", ROOT.kRed+2, 2, 3005, 0.3)
+
+    histMeanClsizePerTrackRecK = ROOT.TH1F("histMeanClsizePerTrackRecK", "", 40, 0., 8.)
+    SetHistStyle2(histMeanClsizePerTrackRecK, "", "<cluster size>", "Entries", ROOT.kGreen+2, 2, 3005, 0.3)
+    
+    histMeanClsizePerTrackRecP = ROOT.TH1F("histMeanClsizePerTrackRecP", "", 40, 0., 8.)
+    SetHistStyle2(histMeanClsizePerTrackRecP, "", "<cluster size>", "Entries", ROOT.kBlue+2, 2, 3005, 0.3)
+
     histMeanClsizePerTrackRecHe3 = ROOT.TH1F("histMeanClsizePerTrackRecHe3", "", 40, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecHe3, "", "<cluster size>", "Entries", ROOT.kRed+1, 2, 3001, 0.6)
 
@@ -69,12 +78,33 @@ def read_sim(fInName):
         fIn = TFile.Open(fInName)
         treeReaderInput = TTreeReader(treeName, fIn)
         mChargeRec = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mChargeRec")
-        mClsizeRec = ROOT.TTreeReaderArray(ROOT.int)(treeReaderInput, "mClsizeRec")
-        mLayerRec = ROOT.TTreeReaderArray(ROOT.int)(treeReaderInput, "mLayerRec")
+        #mClsizeRec = ROOT.TTreeReaderArray(ROOT.int)(treeReaderInput, "mClsizeRec")
         mMeanClsizePerTrackRec = ROOT.TTreeReaderValue(ROOT.double)(treeReaderInput, "mMeanClsizePerTrackRec")
         mPtGen = ROOT.TTreeReaderValue(ROOT.double)(treeReaderInput, "mPtGen")
         mChargeGen = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mChargeGen")
         mPdgCodeGen = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPdgCodeGen")
+        # Clsize per layer
+        mClsizeRecLayer0 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer0")
+        mClsizeRecLayer1 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer1")
+        mClsizeRecLayer2 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer2")
+        mClsizeRecLayer3 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer3")
+        mClsizeRecLayer4 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer4")
+        mClsizeRecLayer5 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer5")
+        mClsizeRecLayer6 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer6")
+        mClsizeRecLayer7 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer7")
+        mClsizeRecLayer8 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer8")
+        mClsizeRecLayer9 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mClsizeRecLayer9")
+        # Pattern ID per layer
+        mPattIdRecLayer0 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer0")
+        mPattIdRecLayer1 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer1")
+        mPattIdRecLayer2 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer2")
+        mPattIdRecLayer3 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer3")
+        mPattIdRecLayer4 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer4")
+        mPattIdRecLayer5 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer5")
+        mPattIdRecLayer6 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer6")
+        mPattIdRecLayer7 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer7")
+        mPattIdRecLayer8 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer8")
+        mPattIdRecLayer9 = ROOT.TTreeReaderValue(ROOT.int)(treeReaderInput, "mPattIdRecLayer9")
 
         print("Processing {}...".format(fIn.GetName()))
         while treeReaderInput.Next():
@@ -85,10 +115,30 @@ def read_sim(fInName):
                 histMeanClsizePerTrackRecHe3.Fill(mMeanClsizePerTrackRec.Get()[0])
             if abs(mPdgCodeGen.Get()[0]) == 211 or abs(mPdgCodeGen.Get()[0]) == 321 or abs(mPdgCodeGen.Get()[0]) == 2212:
                 histMeanClsizePerTrackRecPiKP.Fill(mMeanClsizePerTrackRec.Get()[0])
-            counter = 0
-            for nCl in mClsizeRec:
+            if abs(mPdgCodeGen.Get()[0]) == 211:
+                histMeanClsizePerTrackRecPi.Fill(mMeanClsizePerTrackRec.Get()[0])
+            if abs(mPdgCodeGen.Get()[0]) == 321:
+                histMeanClsizePerTrackRecK.Fill(mMeanClsizePerTrackRec.Get()[0])
+            if abs(mPdgCodeGen.Get()[0]) == 2212:
+                histMeanClsizePerTrackRecP.Fill(mMeanClsizePerTrackRec.Get()[0])
+
+            mClsizeRec = []
+            mClsizeRec.append(mClsizeRecLayer0.Get()[0])
+            mClsizeRec.append(mClsizeRecLayer1.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer2.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer3.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer4.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer5.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer6.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer7.Get()[0])  
+            mClsizeRec.append(mClsizeRecLayer8.Get()[0])
+            mClsizeRec.append(mClsizeRecLayer9.Get()[0]) 
+
+            for layer in range(0, 10):
+                nCl = mClsizeRec[layer]
+                if nCl <= 0:
+                    continue
                 histClsizeRec.Fill(nCl)
-                layer = mLayerRec[counter]
                 histClsizeRecPerLayer[layer].Fill(nCl)
                 if abs(mPdgCodeGen.Get()[0]) == 1000020030:
                     histClsizeRecHe3.Fill(nCl)
@@ -96,7 +146,6 @@ def read_sim(fInName):
                 if abs(mPdgCodeGen.Get()[0]) == 211 or abs(mPdgCodeGen.Get()[0]) == 321 or abs(mPdgCodeGen.Get()[0]) == 2212:
                     histClsizeRecPiKP.Fill(nCl)
                     histClsizeRecPerLayerPiKP[layer].Fill(nCl)
-                counter = counter + 1
     
     legend = ROOT.TLegend(0.70, 0.40, 0.89, 0.73, " ", "brNDC")
     SetLegend(legend)
@@ -108,7 +157,7 @@ def read_sim(fInName):
     latexTitle.SetTextSize(0.050)
     latexTitle.SetNDC()
     latexTitle.SetTextFont(42)
-    
+
     # Cluster size for all reconstructed tracks
     canvasClsizeRec = ROOT.TCanvas("canvasClsizeRec", "canvasClsizeRec", 800, 600)
     gPad.SetLogy(1)
@@ -120,7 +169,7 @@ def read_sim(fInName):
     latexTitle.DrawLatex(0.6, 0.79, "-3.6 < #eta < -2.4")
     latexTitle.DrawLatex(0.6, 0.73, "Run3 simulation")
     canvasClsizeRec.Update()
-    canvasClsizeRec.SaveAs("MFT_clsize_per_track.pdf")
+    canvasClsizeRec.SaveAs("figures/MFT_clsize_per_track.pdf")
 
     # Cluster size for all reconstructed tracks per layer
     canvasClsizeRecPerLayer = ROOT.TCanvas("canvasClsizeRecPerLayer", "canvasClsizeRecPerLayer", 3000, 1200)
@@ -137,7 +186,7 @@ def read_sim(fInName):
         latexTitle.DrawLatex(0.5, 0.85, "<#pi, K, p> = %3.2f" % (histClsizeRecPerLayerPiKP[i].GetMean()))
         latexTitle.DrawLatex(0.5, 0.79, "<^{3}He> = %3.2f" % (histClsizeRecPerLayerHe3[i].GetMean()))
     canvasClsizeRecPerLayer.Update()
-    canvasClsizeRecPerLayer.SaveAs("MFT_clsize_mean_per_track_per_layer.pdf")
+    canvasClsizeRecPerLayer.SaveAs("figures/MFT_clsize_mean_per_track_per_layer.pdf")
 
     # Mean cluster size for all reconstructed tracks
     canvasMeanClsizePerTrackRec = ROOT.TCanvas("canvasMeanClsizePerTrackRec", "canvasMeanClsizePerTrackRec", 800, 600)
@@ -149,7 +198,29 @@ def read_sim(fInName):
     latexTitle.DrawLatex(0.6, 0.79, "-3.6 < #eta < -2.4")
     latexTitle.DrawLatex(0.6, 0.73, "Run3 simulation")
     canvasMeanClsizePerTrackRec.Update()
-    canvasMeanClsizePerTrackRec.SaveAs("MFT_clsize_mean_per_track.pdf")
+    canvasMeanClsizePerTrackRec.SaveAs("figures/MFT_clsize_mean_per_track.pdf")
+
+    # Normalize histograms
+    histMeanClsizePerTrackRecPi.Scale(1. / histMeanClsizePerTrackRecPi.Integral())
+    histMeanClsizePerTrackRecK.Scale(1. / histMeanClsizePerTrackRecK.Integral())
+    histMeanClsizePerTrackRecP.Scale(1. / histMeanClsizePerTrackRecP.Integral())
+
+    legendLF = ROOT.TLegend(0.70, 0.40, 0.89, 0.73, " ", "brNDC")
+    SetLegend(legendLF)
+    legendLF.AddEntry(histMeanClsizePerTrackRecPi, "#pi", "PE")
+    legendLF.AddEntry(histMeanClsizePerTrackRecK, "K", "PE")
+    legendLF.AddEntry(histMeanClsizePerTrackRecP, "p", "PE")
+
+    canvasMeanClsizePerTrackRecLF = ROOT.TCanvas("canvasMeanClsizePerTrackRecLF", "canvasMeanClsizePerTrackRecLF", 800, 600)
+    histMeanClsizePerTrackRecPi.Draw("EP")
+    histMeanClsizePerTrackRecK.Draw("EPsame")
+    histMeanClsizePerTrackRecP.Draw("EPsame")
+    legendLF.Draw("same")
+    latexTitle.DrawLatex(0.6, 0.85, "pp #sqrt{s} = 13 TeV")
+    latexTitle.DrawLatex(0.6, 0.79, "-3.6 < #eta < -2.4")
+    latexTitle.DrawLatex(0.6, 0.73, "Run3 simulation")
+    canvasMeanClsizePerTrackRecLF.Update()
+    canvasMeanClsizePerTrackRecLF.SaveAs("figures/MFT_clsize_mean_per_track_LF.pdf")
 
     # Charge efficiency reconstruction
     histTotalChargeMatch = effChargeMatch.GetCopyTotalHisto()
@@ -175,7 +246,7 @@ def read_sim(fInName):
     latexTitle.DrawLatex(0.6, 0.85, "pp #sqrt{s} = 13 TeV")
     latexTitle.DrawLatex(0.6, 0.80, "Run3 simulation")
     canvasChargeMatch.Update()
-    canvasChargeMatch.SaveAs("MFT_charge_match_eff.pdf")
+    canvasChargeMatch.SaveAs("figures/MFT_charge_match_eff.pdf")
 
     #input()
 
@@ -189,6 +260,7 @@ def main():
     args = parser.parse_args()
 
     if args.read_sim:
+        #read_sim("../output/MFTAssessment_test.root")
         read_sim("../output/MFTAssessmentMC.root")
 
 main()
