@@ -254,13 +254,59 @@ def read_sim(fInName):
     
     exit()
 
+def compare_data_mc():
+    gStyle.SetOptStat(0)
+    LoadStyle()
+    ROOT.TGaxis.SetMaxDigits(3)
+
+    fInData = TFile.Open("../output/MFTAssessmentData.root")
+    histClsizeData = fInData.Get("mMFTClusterSize")
+    histClsizeData.SetMarkerStyle(20)
+    histClsizeData.SetMarkerColor(ROOT.kBlack)
+    histClsizeData.SetLineColor(ROOT.kBlack)
+    histClsizeData.Scale(1. / histClsizeData.Integral())
+
+    fInMC = TFile.Open("../output/MFTAssessmentMC.root")
+    histClsizeMC = fInMC.Get("mMFTClusterSize")
+    SetHistStyle2(histClsizeMC, "", "cluster size", "Entries", ROOT.kRed+1, 2, 3005, 0.5)
+    histClsizeMC.Scale(1. / histClsizeMC.Integral())
+
+    legend = ROOT.TLegend(0.70, 0.65, 0.89, 0.85, " ", "brNDC")
+    SetLegend(legend)
+    legend.AddEntry(histClsizeData, "Data", "EP")
+    legend.AddEntry(histClsizeMC, "MC", "F")
+
+    latexTitle = ROOT.TLatex()
+    latexTitle.SetTextSize(0.050)
+    latexTitle.SetNDC()
+    latexTitle.SetTextFont(42)
+
+    canvasClsizeComp = ROOT.TCanvas("canvasClsizeComp", "canvasClsizeComp", 800, 600)
+    gPad.SetLogy(1)
+    histClsizeMC.Draw("H")
+    histClsizeData.Draw("EPsame")
+    legend.Draw("same")
+    latexTitle.DrawLatex(0.6, 0.85, "pp #sqrt{s} = 13 TeV")
+    latexTitle.DrawLatex(0.6, 0.79, "-3.6 < #eta < -2.4")
+    canvasClsizeComp.Update()
+
+    input()
+
+    exit()
+
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='Arguments to pass')
     parser.add_argument("--read_sim", help="Read the simulation and produce output histograms", action="store_true")
+    parser.add_argument("--compare_data_mc", help="Compare Data and MC distributions", action="store_true")
     args = parser.parse_args()
 
     if args.read_sim:
         #read_sim("../output/MFTAssessment_test.root")
         read_sim("../output/MFTAssessmentMC.root")
+    if args.compare_data_mc:
+        compare_data_mc()
 
 main()
