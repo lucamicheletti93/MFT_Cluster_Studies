@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 import argparse
 import yaml
 import random
@@ -19,14 +20,14 @@ def copy_from_grid(inputCfg):
             os.system("mkdir -p {}{}".format(inputCfg["input"]["ctf_input_path"], i))
         os.system("alien_cp alien://%s/%s file:%s%i" % (inputCfg["input"]["alien_input_path"], lines[i].replace("\n", ""), inputCfg["input"]["ctf_input_path"], i))
 
-    for i in range(0, len(lines)):
-        os.chdir("%s%i" % (inputCfg["input"]["ctf_input_path"], i))
-        if not os.path.isfile("mftclusters.root") or not os.path.isfile("mfttracks.root"):
-            os.system("o2-ctf-reader-workflow --onlyDet MFT  --ctf-input %s | o2-mft-reco-workflow --clusters-from-upstream --disable-mc  -b" % (lines[i].replace("\n", "")))
-        if not os.path.isfile("o2simdigitizerworkflow_configuration.ini"):
-            os.system("cp /home/lmichele/alice/mft_data/CTF/tf0/o2simdigitizerworkflow_configuration.ini .")
-        if not os.path.isfile("mftdigits.roots"):
-            os.system("cp /home/lmichele/alice/mft_data/CTF/tf0/mftdigits.root .")
+    #for i in range(0, len(lines)):
+        #os.chdir("%s%i" % (inputCfg["input"]["ctf_input_path"], i))
+        #if not os.path.isfile("mftclusters.root") or not os.path.isfile("mfttracks.root"):
+            #os.system("o2-ctf-reader-workflow --onlyDet MFT  --ctf-input %s | o2-mft-reco-workflow --clusters-from-upstream --disable-mc  -b" % (lines[i].replace("\n", "")))
+        #if not os.path.isfile("o2simdigitizerworkflow_configuration.ini"):
+            #os.system("cp /home/lmichele/alice/mft_data/CTF/tf0/o2simdigitizerworkflow_configuration.ini .")
+        #if not os.path.isfile("mftdigits.roots"):
+            #os.system("cp /home/lmichele/alice/mft_data/CTF/tf0/mftdigits.root .")
 
 
 def run_mft_assesment(inputCfg, mode):
@@ -34,11 +35,22 @@ def run_mft_assesment(inputCfg, mode):
     function to run the MFTAssesment workflow on time frames
     '''
     paths = []
+    fileCounter = 0
     for file in os.listdir(inputCfg["input"]["local_input_path"]):
         d = os.path.join(inputCfg["input"]["local_input_path"], file)
         if os.path.isdir(d):
-            paths.append(d)
-            print(d)
+            fileCounter = fileCounter + 1
+            #paths.append(d)
+            #print(d)
+    print(fileCounter)
+
+    for i in range(0, fileCounter):
+        #d = os.path.join(inputCfg["input"]["local_input_path"], str(i))
+        d = ("{}{}".format(inputCfg["input"]["ctf_input_path"], i))
+        paths.append(d)
+
+    with open(inputCfg["input"]["run_list_file"]) as f:
+        lines = f.readlines()
 
     counter = 0
     for path in paths:
@@ -46,8 +58,16 @@ def run_mft_assesment(inputCfg, mode):
             exit()
         print("----------------------   %s   ----------------------" % (path))
         os.chdir("%s" % (path))
+
+        if not os.path.isfile("{}".format(lines[paths.index(path)].replace("\n", ""))):
+            print("---------------------->   THE FILE DOES NOT EXIST   <----------------------")
+            if not os.path.isfile("MFTAssessment.root"):
+                os.system("rm MFTAssessment.root")
+            continue
         if inputCfg["input"]["prod_type"] == "data":
-            os.system("o2-mft-reco-workflow | o2-mft-assessment-workflow --disable-mc")
+            #os.system("o2-mft-reco-workflow | o2-mft-assessment-workflow --disable-mc")
+            os.system("o2-ctf-reader-workflow --onlyDet MFT --ctf-input {} | o2-mft-reco-workflow --shm-segment-size 15000000000 --clusters-from-upstream --disable-mc | o2-mft-assessment-workflow --disable-mc -b --run".format(lines[paths.index(path)].replace("\n", "")))
+            #print("o2-ctf-reader-workflow --onlyDet MFT --ctf-input {} | o2-mft-reco-workflow --shm-segment-size 15000000000 --clusters-from-upstream --disable-mc | o2-mft-assessment-workflow --disable-mc -b --run".format(lines[paths.index(path)].replace("\n", "")))
         if inputCfg["input"]["prod_type"] == "mc":
             os.system("o2-mft-reco-workflow | o2-mft-assessment-workflow")
         counter = counter + 1
