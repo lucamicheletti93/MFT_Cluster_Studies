@@ -1,9 +1,0 @@
-input:
-    run_list_file: run_list.txt
-    alien_input_path: /alice/sim/2021/LHC21d9m/300333
-    local_input_path: /home/lmichele/alice/mft_sim_full/myDir
-    ctf_input_path: /home/lmichele/GITHUB/MFT_Cluster_Studies/CTF/tf
-    prod_type: mc
-output:
-    local_output_file: output/MFTAssessmentMC.root
-    analysis_output: MyAnalysisResultsMC.root

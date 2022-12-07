@@ -1,8 +1,6 @@
 from ast import parse
 from itertools import count
 from time import process_time_ns
-from tkinter import Canvas
-from turtle import color, right
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
 import time
@@ -30,8 +28,8 @@ def read(fInName, fOutName):
     LoadStyle()
     ROOT.TGaxis.SetMaxDigits(3)
 
-    #treeNames = ["treeTrackClusterSizeMC"]
-    treeNames = ["treeTrackClusterSizeData"]
+    treeNames = ["treeTrackClusterSize"]
+    #treeNames = ["treeTrackClusterSizeData"]
     isMC = False
 
     # init histograms
@@ -65,22 +63,22 @@ def read(fInName, fOutName):
     histPattIdRec = ROOT.TH1I("histPattIdRec", "", 100, -0.5, 99.5)
     SetHistStyle2(histPattIdRec, "", "pattern ID", "Entries", ROOT.kBlack, 2, 3001, 0)
 
-    histMeanClsizePerTrackRec = ROOT.TH1F("histMeanClsizePerTrackRec", "", 80, 0., 8.)
+    histMeanClsizePerTrackRec = ROOT.TH1F("histMeanClsizePerTrackRec", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRec, "", "<cluster size>", "Entries", ROOT.kBlack, 2, 3001, 0)
 
-    histMeanClsizePerTrackRecPiKP = ROOT.TH1F("histMeanClsizePerTrackRecPiKP", "", 80, 0., 8.)
+    histMeanClsizePerTrackRecPiKP = ROOT.TH1F("histMeanClsizePerTrackRecPiKP", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecPiKP, "", "<cluster size>", "Entries", ROOT.kAzure+2, 2, 3005, 0.6)
 
-    histMeanClsizePerTrackRecPi = ROOT.TH1F("histMeanClsizePerTrackRecPi", "", 80, 0., 8.)
+    histMeanClsizePerTrackRecPi = ROOT.TH1F("histMeanClsizePerTrackRecPi", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecPi, "", "<cluster size>", "Entries", ROOT.kRed+2, 2, 3005, 0.3)
 
-    histMeanClsizePerTrackRecK = ROOT.TH1F("histMeanClsizePerTrackRecK", "", 80, 0., 8.)
+    histMeanClsizePerTrackRecK = ROOT.TH1F("histMeanClsizePerTrackRecK", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecK, "", "<cluster size>", "Entries", ROOT.kGreen+2, 2, 3005, 0.3)
     
-    histMeanClsizePerTrackRecP = ROOT.TH1F("histMeanClsizePerTrackRecP", "", 80, 0., 8.)
+    histMeanClsizePerTrackRecP = ROOT.TH1F("histMeanClsizePerTrackRecP", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecP, "", "<cluster size>", "Entries", ROOT.kBlue+2, 2, 3005, 0.3)
 
-    histMeanClsizePerTrackRecHe3 = ROOT.TH1F("histMeanClsizePerTrackRecHe3", "", 80, 0., 8.)
+    histMeanClsizePerTrackRecHe3 = ROOT.TH1F("histMeanClsizePerTrackRecHe3", "", 800, 0., 8.)
     SetHistStyle2(histMeanClsizePerTrackRecHe3, "", "<cluster size>", "Entries", ROOT.kRed+1, 2, 3001, 0.6)
 
     effChargeMatch = ROOT.TEfficiency("effChargeMatch", "Charge Match;p_t [GeV];#epsilon", 20, 0, 10)
@@ -391,7 +389,8 @@ def main():
         #read("../output/MFTAssessment_test.root")
         #read("../output/MFTAssessmentMC.root")
         #read("../output/MFTAssessmentData_LHC22n.root", "../output/MFTAssessmentData_LHC22n_skimmed.root")
-        read("../output/MFTAssessmentData_LHC22n_526195_0420.root", "../output/MFTAssessmentData_LHC22n_526195_0420_skimmed.root")
+        #read("../output/MFTAssessmentData_LHC22n_526195_0420.root", "../output/MFTAssessmentData_LHC22n_526195_0420_skimmed.root")
+        read("../output/MFTAssessmentMC.root", "../output/MFTAssessmentMC_skimmed.root")
     if args.compare_data_mc:
         compare_data_mc()
 
