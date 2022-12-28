@@ -85,15 +85,18 @@ void plot_results(){
     TFile *fIn = new TFile("output.root", "READ");
 
     TH1F *histData = (TH1F*) fIn -> Get("treeTrackClusterSizeData");
+    histData -> Rebin(2);
     histData -> SetMarkerStyle(20);
     histData -> SetMarkerColor(kBlack);
     histData -> SetLineColor(kBlack);
 
     TH1F *histMC = (TH1F*) fIn -> Get("treeTrackClusterSize");
+    histMC -> Rebin(2);
     histMC -> SetLineColor(kRed+1);
+    histMC -> Scale(100. / histMC -> Integral());
 
     TCanvas *canvas = new TCanvas("canvas", "", 600, 600);
     histData -> Draw("EP");
-    histData -> Draw("Hsame");
+    histMC -> Draw("Hsame");
 
 }
