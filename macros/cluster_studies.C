@@ -81,7 +81,8 @@ void cluster_studies(){
     std::vector<o2::itsmft::ROFRecord> *mMFTClustersROF = nullptr;
     std::vector<unsigned char> *mMFTClusterPatterns = nullptr;
 
-    std::vector<o2::BaseCluster<float>> mMFTClustersGlobal;
+    //std::vector<const unsigned char> *pattIt = nullptr;
+    //std::vector<o2::BaseCluster<float>> *mMFTClustersGlobal;
 
     treeMFTClusters -> SetBranchAddress("MFTTrack", &mMFTTracks);
     treeMFTClusters -> SetBranchAddress("MFTTracksROF", &mMFTTracksROF);
@@ -91,6 +92,7 @@ void cluster_studies(){
     treeMFTTracks -> SetBranchAddress("MFTClustersROF", &mMFTClustersROF);
     treeMFTTracks -> SetBranchAddress("MFTClusterPatt", &mMFTClusterPatterns);
 
+    std::cout << treeMFTClusters -> GetEntriesFast() << std::endl;
     for (int frame = 0; frame < treeMFTClusters -> GetEntriesFast(); frame++) {
         // LOOP OVER FRAMES  
         //LOG(info) << "Skipping frame: " << frame;
@@ -100,9 +102,33 @@ void cluster_studies(){
             LOG(info) << "Skipping frame: " << frame;
             continue;
         }
-        for (unsigned int iClus{0}; iClus < ITSclus->size(); iClus++) {
+        cout << mMFTClusters -> size() << std::endl;
+        //pattIt = mMFTClusterPatterns -> begin();
+        //mMFTClustersGlobal -> clear();
+        //mMFTClustersGlobal -> reserve(mMFTClusters -> size());
+        //o2::mft::ioutils::convertCompactClusters(mMFTClusters, pattIt, mMFTClustersGlobal, mDictionary);
 
+        std::vector<o2::itsmft::ClusterPattern> pattVec;
+        pattVec.reserve(mMFTClusters -> size());
+        auto pattItMFT = mMFTClusterPatterns -> begin();
+
+        for (unsigned int iClus{0}; iClus < mMFTClusters -> size(); ++iClus) {
+            //auto &clus = mMFTClusters[iClus];
+            auto &clus = mMFTClusters -> at(iClus);
+            auto pattID = clus.getPatternID();
+            int npix;
+            o2::itsmft::ClusterPattern patt;
+            //if (pattID == o2::itsmft::CompCluster::InvalidPatternID || mDictionary->isGroup(pattID)) {
+                patt.acquirePattern(pattItMFT);
+                npix = patt.getNPixels();
+                std::cout << npix << std::endl;
+            //} else {
+                //npix = mDictionary->getNpixels(pattID);
+                //patt = mDictionary->getPattern(pattID);
+            //}
+            //pattVec.push_back(patt);
         }
+
     }
 
     /*
