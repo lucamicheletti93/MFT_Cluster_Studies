@@ -60,6 +60,12 @@ using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
 
 
 void cluster_studies(){
+    TH1F *histClsize = new TH1F("histClsize", "", 100, -0.5, 99.5);
+
+    //LOG(info) << "Loading LATEST dictionary: if you are analysing data older than JUNE check out the dictionary";
+    auto fIn = TFile("o2_itsmft_TopologyDictionary_1653153873993.root");
+    o2::itsmft::TopologyDictionary mDictionary = *(reinterpret_cast<o2::itsmft::TopologyDictionary *>(fIn.Get("ccdb_object")));
+
     printf("Running a first test\n");
     TFile *fMFTClusters = new TFile("mfttracks.root", "READ");
     fMFTClusters -> ls();
@@ -118,18 +124,39 @@ void cluster_studies(){
             auto pattID = clus.getPatternID();
             int npix;
             o2::itsmft::ClusterPattern patt;
-            //if (pattID == o2::itsmft::CompCluster::InvalidPatternID || mDictionary->isGroup(pattID)) {
+            if (pattID == o2::itsmft::CompCluster::InvalidPatternID || mDictionary.isGroup(pattID)) {
                 patt.acquirePattern(pattItMFT);
                 npix = patt.getNPixels();
-                std::cout << npix << std::endl;
-            //} else {
-                //npix = mDictionary->getNpixels(pattID);
-                //patt = mDictionary->getPattern(pattID);
-            //}
-            //pattVec.push_back(patt);
+            } else {
+                npix = mDictionary.getNpixels(pattID);
+                patt = mDictionary.getPattern(pattID);
+            }
+            histClsize -> Fill(npix);
+            pattVec.push_back(patt);
+        }
+
+        std::cout << mMFTTracks -> size() << std::endl;
+        for (unsigned int iTrack{0}; iTrack < mMFTTracks -> size(); ++iTrack) {
+            auto &oneTrack = mMFTTracks -> at(iTrack);
+            auto ncls = oneTrack.getNumberOfPoints();
+            auto offset = oneTrack.getExternalClusterIndexOffset();
+
+            for (int icls = 0; icls < ncls; ++icls) {
+                auto clsEntry = mMFTTrackClusIdx -> at(offset + icls);
+                auto &oneCluster = mMFTClusters -> at(clsEntry);
+                auto &patt = pattVec.at(clsEntry);
+                //auto globalCluster = mMFTClustersGlobal[clsEntry];
+                int npix = patt.getNPixels();
+                std::cout << npix << " , ";
+            }
+            std::cout << std::endl;
         }
 
     }
+
+    TFile *fOut = new TFile("test_cluster_studies.root", "RECREATE");
+    histClsize -> Write();
+    fOut -> Close();
 
     /*
     mMFTTracks = ctx.inputs().get<gsl::span<o2::mft::TrackMFT>>("tracks");
