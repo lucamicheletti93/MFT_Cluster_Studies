@@ -21,6 +21,8 @@
 #include "ITStracking/IOUtils.h"
 #include "ReconstructionDataFormats/TrackTPCITS.h"
 
+#include "Steer/MCKinematicsReader.h"
+
 #include <gsl/gsl>
 #include "TSystemDirectory.h"
 #include <TLorentzVector.h>
@@ -43,6 +45,7 @@
 
 #include "CCDB/BasicCCDBManager.h"
 #include "CCDB/CCDBTimeStampUtils.h"
+#include "Framework/CCDBParamSpec.h"
 
 #endif
 
@@ -59,23 +62,37 @@ using Vec3 = ROOT::Math::SVector<double, 3>;
 using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
 
 
-void cluster_studies(){
-    TH1F *histClsize = new TH1F("histClsize", "", 100, -0.5, 99.5);
+void cluster_studies(bool isMC = false){
 
-    //LOG(info) << "Loading LATEST dictionary: if you are analysing data older than JUNE check out the dictionary";
-    auto fIn = TFile("o2_itsmft_TopologyDictionary_1653153873993.root");
+    string pathIn;
+    if (isMC) {
+        pathIn = "cross_check/mc";
+    } else {
+        pathIn = "cross_check/data";
+    }
+
+    TH1F *mTrackClusterSize = new TH1F("mMFTTrackClusterSize", "Cluster Size Per Track; # clusters; # entries", 100, 0.5, 100.5);
+    TH1F *mTrackClusterSizeMC = new TH1F("mMFTTrackClusterSizeMC", "Cluster Size Per Track MC; # clusters; # entries", 100, 0.5, 100.5);
+    TH1F *mTrackMeanClusterSize = new TH1F("mMFTTrackMeanClusterSize", "Mean Cluster Size Per Track; # clusters; # entries", 200, 0.5, 10.5);
+    TH1F *mTrackMeanClusterSize3He = new TH1F("mTrackMeanClusterSize3He", "Mean Cluster Size Per Track 3He; # clusters; # entries", 200, 0.5, 10.5);
+
+    auto fIn = TFile("ccdb/o2_itsmft_TopologyDictionary_1320237.root"); // March 2022
+    //auto fIn = TFile("ccdb/o2_itsmft_TopologyDictionary_0747987.root"); // December 2022
     o2::itsmft::TopologyDictionary mDictionary = *(reinterpret_cast<o2::itsmft::TopologyDictionary *>(fIn.Get("ccdb_object")));
 
     printf("Running a first test\n");
-    TFile *fMFTClusters = new TFile("mfttracks.root", "READ");
+    TFile *fMFTClusters = new TFile(Form("%s/mftclusters.root", pathIn.c_str()), "READ");
     fMFTClusters -> ls();
-    TFile *fMFTTracks = new TFile("mftclusters.root", "READ");
+    TFile *fMFTTracks = new TFile(Form("%s/mfttracks.root", pathIn.c_str()), "READ");
     fMFTTracks -> ls();
-    //auto fMCTracks = TFile::Open("sgn_1_Kine.root");
+    TFile *fMCTracks = new TFile(Form("%s/sgn_2_Kine.root", pathIn.c_str()), "READ");
+    fMCTracks -> ls();
 
+    
     TTree *treeMFTClusters = (TTree*) fMFTClusters -> Get("o2sim");
     TTree *treeMFTTracks = (TTree*) fMFTTracks -> Get("o2sim");
-    //TTree *treeMCTracks = (TTree*) fMCTracks -> Get("o2sim");
+    TTree *treeMCTracks = (TTree*) fMCTracks -> Get("o2sim");
+    //TTree *treeMCTracks = nullptr;
 
     // get tracks
     std::vector<o2::mft::TrackMFT> *mMFTTracks = nullptr;
@@ -87,17 +104,34 @@ void cluster_studies(){
     std::vector<o2::itsmft::ROFRecord> *mMFTClustersROF = nullptr;
     std::vector<unsigned char> *mMFTClusterPatterns = nullptr;
 
+    // get MC tracks
+    std::vector<o2::MCTrack> *mMCtracks = nullptr;
+    std::vector<std::vector<std::vector<int>>> mTrueTracksMap;
+    o2::dataformats::MCTruthContainer<o2::MCCompLabel> *mMFTClusterLabels = nullptr;
+    vector<o2::MCCompLabel> *mMFTTrackLabels = nullptr;
+
     //std::vector<const unsigned char> *pattIt = nullptr;
     //std::vector<o2::BaseCluster<float>> *mMFTClustersGlobal;
 
-    treeMFTClusters -> SetBranchAddress("MFTTrack", &mMFTTracks);
-    treeMFTClusters -> SetBranchAddress("MFTTracksROF", &mMFTTracksROF);
-    treeMFTClusters -> SetBranchAddress("MFTTrackClusIdx", &mMFTTrackClusIdx);
+    std::vector<int> ClTrackID;
+    std::vector<int> ClEvID;
+    std::vector<int> ClSiezes;
 
-    treeMFTTracks -> SetBranchAddress("MFTClusterComp", &mMFTClusters);
-    treeMFTTracks -> SetBranchAddress("MFTClustersROF", &mMFTClustersROF);
-    treeMFTTracks -> SetBranchAddress("MFTClusterPatt", &mMFTClusterPatterns);
+    treeMFTTracks -> SetBranchAddress("MFTTrack", &mMFTTracks);
+    treeMFTTracks -> SetBranchAddress("MFTTracksROF", &mMFTTracksROF);
+    treeMFTTracks -> SetBranchAddress("MFTTrackClusIdx", &mMFTTrackClusIdx);
+    treeMFTTracks -> SetBranchAddress("MFTTrackMCTruth", &mMFTTrackLabels);
 
+    treeMFTClusters -> SetBranchAddress("MFTClusterComp", &mMFTClusters);
+    treeMFTClusters -> SetBranchAddress("MFTClustersROF", &mMFTClustersROF);
+    treeMFTClusters -> SetBranchAddress("MFTClusterPatt", &mMFTClusterPatterns);
+    treeMFTClusters -> SetBranchAddress("MFTClusterMCTruth", &mMFTClusterLabels);
+
+    treeMCTracks->SetBranchAddress("MCTrack", &mMCtracks);
+
+    // Alternative way to read the kinematics file -> not finalized
+    //o2::steer::MCKinematicsReader mMCReader(Form("%s/sgn_2", pathIn.c_str()), o2::steer::MCKinematicsReader::Mode::kMCKine);
+    
     std::cout << treeMFTClusters -> GetEntriesFast() << std::endl;
     for (int frame = 0; frame < treeMFTClusters -> GetEntriesFast(); frame++) {
         // LOOP OVER FRAMES  
@@ -131,15 +165,54 @@ void cluster_studies(){
                 npix = mDictionary.getNpixels(pattID);
                 patt = mDictionary.getPattern(pattID);
             }
-            histClsize -> Fill(npix);
+            mTrackClusterSize -> Fill(npix);
             pattVec.push_back(patt);
+
+            ///
+            auto &labCls = (mMFTClusterLabels -> getLabels(iClus))[0];
+            int  trackID, evID, srcID;
+            bool fake;
+            labCls.get(trackID, evID, srcID, fake);
+            //if (!labCls.isNoise() && labCls.isValid() && labCls.isCorrect() && !labCls.isFake()) {
+                ClTrackID.push_back(trackID);
+                ClEvID.push_back(evID);
+                ClSiezes.push_back(npix);
+            //}
+            ///
         }
 
-        std::cout << mMFTTracks -> size() << std::endl;
+        //std::cout << "ENTERING THE CODE FOR MC ASSOCIATION" << std::endl;
+        std::vector<std::vector<o2::MCTrack>> mcTracksMatrix;
+        auto nev = treeMCTracks -> GetEntriesFast();
+        mcTracksMatrix.resize(nev);
+        for (int n = 0; n < nev; n++) {
+            treeMCTracks -> GetEvent(n);
+            mcTracksMatrix[n].resize(mMCtracks -> size());
+            for (unsigned int mcI{0}; mcI < mMCtracks -> size(); ++mcI) {
+                mcTracksMatrix[n][mcI] = mMCtracks -> at(mcI);
+            }
+        }
+
+        //std::cout << mMFTTracks -> size() << std::endl;
         for (unsigned int iTrack{0}; iTrack < mMFTTracks -> size(); ++iTrack) {
             auto &oneTrack = mMFTTracks -> at(iTrack);
             auto ncls = oneTrack.getNumberOfPoints();
             auto offset = oneTrack.getExternalClusterIndexOffset();
+
+            float mean = 0, norm = 0;
+            int trackPDG = -999999999;
+
+            //auto &trackLabel = (mMFTTrackLabels -> getLabels(iTrack))[0];
+            auto &trackLabel = mMFTTrackLabels -> at(iTrack);
+            if (trackLabel.isCorrect()) {
+                int  trackID, evID, srcID;
+                bool fake;
+                trackLabel.get(trackID, evID, srcID, fake);
+                LOG(info) << "(Labels info: trackID="<<trackID<<", eventID="<<evID<<", srcID="<<srcID;
+                trackPDG = mcTracksMatrix[evID][trackID].GetPdgCode();
+            } else {
+                continue;
+            }
 
             for (int icls = 0; icls < ncls; ++icls) {
                 auto clsEntry = mMFTTrackClusIdx -> at(offset + icls);
@@ -147,35 +220,60 @@ void cluster_studies(){
                 auto &patt = pattVec.at(clsEntry);
                 //auto globalCluster = mMFTClustersGlobal[clsEntry];
                 int npix = patt.getNPixels();
-                std::cout << npix << " , ";
+                std::cout << npix << " + ";
+
+                mean += npix;
+                norm += 1;
             }
-            std::cout << std::endl;
+            mean /= norm;
+            std::cout << " -> " << mean << " - " << trackPDG << std::endl;
+            mTrackMeanClusterSize -> Fill(mean);
+            if (TMath::Abs(trackPDG) == 1000020030) {
+                mTrackMeanClusterSize3He -> Fill(mean);
+            }
+            //std::cout << std::endl;
+        }
+
+        TFile *fOut = new TFile(Form("%s/cross_check.root", pathIn.c_str()), "RECREATE");
+        mTrackClusterSize -> Write();
+        mTrackMeanClusterSize -> Write();
+        mTrackClusterSizeMC -> Write();
+        mTrackMeanClusterSize3He -> Write();
+        fOut -> Close();
+
+        return;
+        if (isMC) {
+            /*int myCounter = 0;
+            for (auto src = 0; src < mMCReader.getNSources(); src++) {
+                for (Int_t event = 0; event < mMCReader.getNEvents(src); event++) {
+                    auto evH = mMCReader.getMCEventHeader(src, event);
+
+                    for (const auto& trueMFTTrackID : mTrueTracksMap[src][event]) {
+                        auto mftTrack = mMFTTracks -> at(trueMFTTrackID);
+                    }
+                }
+            }*/
+
+            std::cout << "ENTERING THE CODE FOR MC ASSOCIATION" << std::endl;
+            std::vector<std::vector<o2::MCTrack>> mcTracksMatrix;
+            auto nev = treeMCTracks -> GetEntriesFast();
+            mcTracksMatrix.resize(nev);
+            for (int n = 0; n < nev; n++) {
+                treeMCTracks -> GetEvent(n);
+                mcTracksMatrix[n].resize(mMCtracks -> size());
+                for (unsigned int mcI{0}; mcI < mMCtracks -> size(); ++mcI) {
+                    mcTracksMatrix[n][mcI] = mMCtracks -> at(mcI);
+                }
+            }
+
+            LOG(info) << "---- GETTING MC tracks info ----";
+            for (int i = 0; i < ClEvID.size(); i++) {
+                auto evID = ClEvID.at(i);
+                auto trID = ClTrackID.at(i);
+                auto trackPDG = mcTracksMatrix[evID][trID].GetPdgCode();
+                mTrackClusterSizeMC -> Fill(ClSiezes.at(i));
+            }
         }
 
     }
-
-    TFile *fOut = new TFile("test_cluster_studies.root", "RECREATE");
-    histClsize -> Write();
-    fOut -> Close();
-
-    /*
-    mMFTTracks = ctx.inputs().get<gsl::span<o2::mft::TrackMFT>>("tracks");
-    mMFTTracksROF = ctx.inputs().get<gsl::span<o2::itsmft::ROFRecord>>("tracksrofs");
-    mMFTTrackClusIdx = ctx.inputs().get<gsl::span<int>>("trackClIdx");
-
-    
-    mMFTClusters = ctx.inputs().get<gsl::span<o2::itsmft::CompClusterExt>>("compClusters");
-    mMFTClustersROF = ctx.inputs().get<gsl::span<o2::itsmft::ROFRecord>>("clustersrofs");
-    mMFTClusterPatterns = ctx.inputs().get<gsl::span<unsigned char>>("patterns");
-    */
-
-    /*
-    std::vector<o2::itsmft::ClusterPattern> pattVec;
-    pattVec.reserve(mMFTClusters -> size());
-    auto pattItMFT = mMFTClusterPatterns -> begin();
-    for (unsigned int iClus{0}; iClus < mMFTClusters -> size(); ++iClus)
-    {
-        std::cout << "ciao" << std::endl;
-    }
-    */
 }
