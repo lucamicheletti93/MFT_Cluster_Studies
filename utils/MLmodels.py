@@ -57,4 +57,3 @@ def plot_confusion_matrix(tp, fp, fn, tn, OutputDir, labels=['Anomaly', 'Normal'
     sn.heatmap(df_cm, cmap='Blues', annot=True, fmt='g')
     plt.title(title)
     plt.savefig(f'{OutputDir}/ConfusionMatrix.pdf')
-    
