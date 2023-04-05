@@ -18,6 +18,7 @@
 #include "DataFormatsITSMFT/ROFRecord.h"
 #include "DataFormatsITSMFT/TrkClusRef.h"
 #include "DataFormatsMFT/TrackMFT.h"
+#include "ITSMFTReconstruction/ChipMappingMFT.h"
 #include "DataFormatsMCH/TrackMCH.h"
 
 #include "ITStracking/IOUtils.h"
@@ -43,7 +44,7 @@
 #include "TStyle.h"
 #include "TLatex.h"
 #include "CommonDataFormat/RangeReference.h"
-#include "DetectorsVertexing/DCAFitterN.h"
+//#include "DetectorsVertexing/DCAFitterN.h"
 
 //#include "CCDB/BasicCCDBManager.h"
 //#include "CCDB/CCDBTimeStampUtils.h"
@@ -62,6 +63,7 @@ using CompClusterExt = o2::itsmft::CompClusterExt;
 using ITSCluster = o2::BaseCluster<float>;
 using Vec3 = ROOT::Math::SVector<double, 3>;
 using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
+o2::itsmft::ChipMappingMFT mMFTChipMapper;
 
 
 void cluster_studies_data(){
@@ -105,6 +107,92 @@ void cluster_studies_data(){
     TTree *treeMFTTracks = (TTree*) fMFTTracks -> Get("o2sim");
     TTree *treeMCHTracks = (TTree*) fMCHTracks -> Get("o2sim");
     TTree *treeGlobalTracks = (TTree*) fGlobalTracks -> Get("GlobalFwdTracks");
+
+    TFile *fOut = new TFile(Form("%s/cross_check_data.root", pathIn.c_str()), "RECREATE");
+    // Global tracks
+    int mChargeGlobalRec = -999;
+    float mPtGlobalRec = -999;
+    float mEtaGlobalRec = -999;
+    float mPhiGlobalRec = -999;
+    // MCH tracks
+    int mChargeMCHRec = -999;
+    float mPtMCHRec = -999;
+    float mEtaMCHRec = -999;
+    float mPhiMCHRec = -999;
+    // MFT tracks
+    int mChargeMFTRec = -999;
+    float mPtMFTRec = -999;
+    float mEtaMFTRec = -999;
+    float mPhiMFTRec = -999;
+    // Matching quality
+    float mMch2MCHMIDRec = -999;
+    float mMch2MFTMCHRec = -999;
+
+    int mClsizeRecLayer0 = -999;
+    int mClsizeRecLayer1 = -999;
+    int mClsizeRecLayer2 = -999;
+    int mClsizeRecLayer3 = -999;
+    int mClsizeRecLayer4 = -999;
+    int mClsizeRecLayer5 = -999;
+    int mClsizeRecLayer6 = -999;
+    int mClsizeRecLayer7 = -999;
+    int mClsizeRecLayer8 = -999;
+    int mClsizeRecLayer9 = -999;
+    int mPattIdRecLayer0 = -999;
+    int mPattIdRecLayer1 = -999;
+    int mPattIdRecLayer2 = -999;
+    int mPattIdRecLayer3 = -999;
+    int mPattIdRecLayer4 = -999;
+    int mPattIdRecLayer5 = -999;
+    int mPattIdRecLayer6 = -999;
+    int mPattIdRecLayer7 = -999;
+    int mPattIdRecLayer8 = -999;
+    int mPattIdRecLayer9 = -999;
+    float mMeanClsizePerTrackRec = -999;
+
+    TTree *mTreeTrackClusterSizeData = new TTree("treeTrackClusterSizeData", "Tree with ClusterSize Data Info");
+    mTreeTrackClusterSizeData -> Branch("mChargeGlobalRec", &mChargeGlobalRec, "mChargeGlobalRec/I");
+    mTreeTrackClusterSizeData -> Branch("mPtGlobalRec", &mPtGlobalRec, "mPtGlobalRec/F");
+    mTreeTrackClusterSizeData -> Branch("mEtaGlobalRec", &mEtaGlobalRec, "mEtaGlobalRec/F");
+    mTreeTrackClusterSizeData -> Branch("mPhiGlobalRec", &mPhiGlobalRec, "mPhiGlobalRec/F");
+
+    mTreeTrackClusterSizeData -> Branch("mChargeMCHRec", &mChargeMCHRec, "mChargeMCHRec/I");
+    mTreeTrackClusterSizeData -> Branch("mPtMCHRec", &mPtMCHRec, "mPtMCHRec/F");
+    mTreeTrackClusterSizeData -> Branch("mEtaMCHRec", &mEtaMCHRec, "mEtaMCHRec/F");
+    mTreeTrackClusterSizeData -> Branch("mPhiMCHRec", &mPhiMCHRec, "mPhiMCHRec/F");
+
+    mTreeTrackClusterSizeData -> Branch("mChargeMFTRec", &mChargeMFTRec, "mChargeMFTRec/I");
+    mTreeTrackClusterSizeData -> Branch("mPtMFTRec", &mPtMFTRec, "mPtMFTRec/F");
+    mTreeTrackClusterSizeData -> Branch("mEtaMFTRec", &mEtaMFTRec, "mEtaMFTRec/F");
+    mTreeTrackClusterSizeData -> Branch("mPhiMFTRec", &mPhiMFTRec, "mPhiMFTRec/F");
+
+    mTreeTrackClusterSizeData -> Branch("mMch2MCHMIDRec", &mMch2MCHMIDRec, "mMch2MCHMIDRec/F");
+    mTreeTrackClusterSizeData -> Branch("mMch2MFTMCHRec", &mMch2MFTMCHRec, "mMch2MFTMCHRec/F");
+
+    // Clsize per layer
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer0", &mClsizeRecLayer0);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer1", &mClsizeRecLayer1);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer2", &mClsizeRecLayer2);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer3", &mClsizeRecLayer3);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer4", &mClsizeRecLayer4);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer5", &mClsizeRecLayer5);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer6", &mClsizeRecLayer6);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer7", &mClsizeRecLayer7);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer8", &mClsizeRecLayer8);
+    mTreeTrackClusterSizeData -> Branch("mClsizeRecLayer9", &mClsizeRecLayer9);
+    // Pattern ID per layer
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer0", &mPattIdRecLayer0);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer1", &mPattIdRecLayer1);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer2", &mPattIdRecLayer2);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer3", &mPattIdRecLayer3);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer4", &mPattIdRecLayer4);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer5", &mPattIdRecLayer5);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer6", &mPattIdRecLayer6);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer7", &mPattIdRecLayer7);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer8", &mPattIdRecLayer8);
+    mTreeTrackClusterSizeData -> Branch("mPattIdRecLayer9", &mPattIdRecLayer9);
+    // Mean cluster size
+    mTreeTrackClusterSizeData -> Branch("mMeanClsizePerTrackRec", &mMeanClsizePerTrackRec);
 
     // get MFT tracks
     std::vector<o2::mft::TrackMFT> *mMFTTracks = nullptr;
@@ -206,71 +294,192 @@ void cluster_studies_data(){
             //cout << "TRACK ID = " << oneMftTrackId << "; N points = " << ncls << endl;
 
             float mean = 0, norm = 0;
-            double ch2MCHMID = oneGlobalFwdTrack.getMIDMatchingChi2();
-            double ch2MFTMCH = oneGlobalFwdTrack.getMFTMCHMatchingChi2();
-            double pt = oneGlobalFwdTrack.getPt();
-            double eta = oneGlobalFwdTrack.getEta();
-            double etaMFT = oneMftTrack.getEta();
-            
-            double pMCH = oneMchTrack.getP();
-            double pzMCH = oneMchTrack.getPz();
-            double etaMCH = 0.5 * TMath::Log((pMCH + pzMCH) / (pMCH - pzMCH));
+            int chargeGlobal = oneGlobalFwdTrack.getCharge();
+            float ptGlobal = oneGlobalFwdTrack.getPt();
+            float etaGlobal = oneGlobalFwdTrack.getEta();
+            float phiGlobal = oneGlobalFwdTrack.getPhi();
+
+            float xMCH = oneMchTrack.getX();
+            float yMCH = oneMchTrack.getY();
+            float pMCH = oneMchTrack.getP();
+            float pxMCH = oneMchTrack.getPz();
+            float pyMCH = oneMchTrack.getPz();
+            float pzMCH = oneMchTrack.getPz();
+
+            int chargeMCH = oneMchTrack.getSign();
+            float ptMCH = TMath::Sqrt(pxMCH * pxMCH + pyMCH * pyMCH);
+            float etaMCH = 0.5 * TMath::Log((pMCH + pzMCH) / (pMCH - pzMCH));
+            float phiMCH = TMath::ATan2(yMCH, xMCH);
+
+            int chargeMFT = oneMftTrack.getCharge();
+            float ptMFT = oneMftTrack.getPt();
+            float etaMFT = oneMftTrack.getEta();
+            float phiMFT = oneMftTrack.getPhi();
+
+            float ch2MCHMID = oneGlobalFwdTrack.getMIDMatchingChi2();
+            float ch2MFTMCH = oneGlobalFwdTrack.getMFTMCHMatchingChi2();
+
+            mChargeGlobalRec = chargeGlobal;
+            mPtGlobalRec = ptGlobal;
+            mEtaGlobalRec = etaGlobal;
+            mPhiGlobalRec = phiGlobal;
+
+            mChargeMCHRec = chargeMCH;
+            mPtMCHRec = ptMCH;
+            mEtaMCHRec = etaMCH;
+            mPhiMCHRec = phiMCH;
+
+            mChargeMFTRec = chargeMFT;
+            mPtMFTRec = ptMFT;
+            mEtaMFTRec = etaMFT;
+            mPhiMFTRec = phiMFT;
+
+            mMch2MCHMIDRec = ch2MCHMID;
+            mMch2MFTMCHRec = ch2MFTMCH;
+
+            //std::cout << mChargeGlobalRec << " " << mPtGlobalRec << " " << mEtaGlobalRec << " " << mPhiGlobalRec << " " << mMch2MCHMIDRec << " " << mMch2MFTMCHRec << std::endl;
 
             for (int icls = 0; icls < ncls; ++icls) {
                 auto clsEntry = mMFTTrackClusIdx -> at(offset + icls);
                 auto &oneCluster = mMFTClusters -> at(clsEntry);
+                int clsLayer = mMFTChipMapper.chip2Layer(oneCluster.getChipID());
                 auto &patt = pattVec.at(clsEntry);
+                auto pattID = oneCluster.getPatternID();
                 int npix = patt.getNPixels();
-                //std::cout << npix << " + ";
+                //std::cout << npix << " (" << clsLayer << ") + ";
+
+                switch(clsLayer) {
+                    case 0:
+                        mClsizeRecLayer0 = npix;
+                        mPattIdRecLayer0 = pattID;
+                        break;
+                    case 1:
+                        mClsizeRecLayer1 = npix;
+                        mPattIdRecLayer1 = pattID;
+                        break;
+                    case 2:
+                        mClsizeRecLayer2 = npix;
+                        mPattIdRecLayer2 = pattID;
+                        break;
+                    case 3:
+                        mClsizeRecLayer3 = npix;
+                        mPattIdRecLayer3 = pattID;
+                        break;
+                    case 4:
+                        mClsizeRecLayer4 = npix;
+                        mPattIdRecLayer4 = pattID;
+                        break;
+                    case 5:
+                        mClsizeRecLayer5 = npix;
+                        mPattIdRecLayer5 = pattID;
+                        break;
+                    case 6:
+                        mClsizeRecLayer6 = npix;
+                        mPattIdRecLayer6 = pattID;
+                        break;
+                    case 7:
+                        mClsizeRecLayer7 = npix;
+                        mPattIdRecLayer7 = pattID;
+                        break;
+                    case 8:
+                        mClsizeRecLayer8 = npix;
+                        mPattIdRecLayer8 = pattID;
+                        break;
+                    case 9:
+                        mClsizeRecLayer9 = npix;
+                        mPattIdRecLayer9 = pattID;
+                        break;
+                }
 
                 mean += npix;
                 norm += 1;
             }
             mean /= norm;
-            //std::cout << " -> MEAN CLs = " << mMFTTracks -> size() << std::endl;
+            mMeanClsizePerTrackRec = mean;
 
             mMIDMatchingChi2 -> Fill(ch2MCHMID);
             mMFTMCHMatchingChi2 -> Fill(ch2MFTMCH);
             
             mGlobalTrackMeanClusterSize -> Fill(mean);
-            mGlobalTrackPt -> Fill(pt);
-            mGlobalTrackEta -> Fill(eta);
+            mGlobalTrackPt -> Fill(ptGlobal);
+            mGlobalTrackEta -> Fill(etaGlobal);
             mGlobalTrackEtaMFT -> Fill(etaMFT);
             mGlobalTrackEtaMCH -> Fill(etaMCH);
-            mGlobalTrackEtaMFTMCHMatchingChi2 -> Fill(eta, ch2MFTMCH);
+            mGlobalTrackEtaMFTMCHMatchingChi2 -> Fill(etaGlobal, ch2MFTMCH);
 
             if (ch2MCHMID > 0 && TMath::Abs(etaMCH) > 2.5 && TMath::Abs(etaMCH) < 4) {
                 mGlobalTrackMeanClusterSizeMuon -> Fill(mean);
-                mGlobalTrackPtMuon -> Fill(pt);
-                mGlobalTrackEtaMuon -> Fill(eta);
+                mGlobalTrackPtMuon -> Fill(ptGlobal);
+                mGlobalTrackEtaMuon -> Fill(etaGlobal);
                 mGlobalTrackEtaMFTMuon -> Fill(etaMFT);
                 mGlobalTrackEtaMCHMuon -> Fill(etaMCH);
-                mGlobalTrackEtaMFTMCHMatchingChi2Muon -> Fill(eta, ch2MFTMCH);
+                mGlobalTrackEtaMFTMCHMatchingChi2Muon -> Fill(etaGlobal, ch2MFTMCH);
             }
+
+            // Fill the tree
+            mTreeTrackClusterSizeData -> Fill();
+
+            mChargeGlobalRec = -999;
+            mPtGlobalRec = -999;
+            mEtaGlobalRec = -999;
+            mPhiGlobalRec = -999;
+            
+            mChargeMCHRec = -999;
+            mPtMCHRec = -999;
+            mEtaMCHRec = -999;
+            mPhiMCHRec = -999;
+
+            mChargeMFTRec = -999;
+            mPtMFTRec = -999;
+            mEtaMFTRec = -999;
+            mPhiMFTRec = -999;
+            // Clsize per layer
+            mClsizeRecLayer0 = -999;
+            mClsizeRecLayer1 = -999;
+            mClsizeRecLayer2 = -999;
+            mClsizeRecLayer3 = -999;
+            mClsizeRecLayer4 = -999;
+            mClsizeRecLayer5 = -999;
+            mClsizeRecLayer6 = -999;
+            mClsizeRecLayer7 = -999;
+            mClsizeRecLayer8 = -999;
+            mClsizeRecLayer9 = -999;
+            // Pattern ID per layer
+            mPattIdRecLayer0 = -999;
+            mPattIdRecLayer1 = -999;
+            mPattIdRecLayer2 = -999;
+            mPattIdRecLayer3 = -999;
+            mPattIdRecLayer4 = -999;
+            mPattIdRecLayer5 = -999;
+            mPattIdRecLayer6 = -999;
+            mPattIdRecLayer7 = -999;
+            mPattIdRecLayer8 = -999;
+            mPattIdRecLayer9 = -999;
         }
-
-        TFile *fOut = new TFile(Form("%s/cross_check_data.root", pathIn.c_str()), "RECREATE");
-        mTrackClusterSize -> Write();
-        mTrackMeanClusterSize -> Write();
-        mTrackEta -> Write();
-
-        mGlobalTrackMeanClusterSize -> Write();
-        mGlobalTrackPt -> Write();
-        mGlobalTrackEta -> Write();
-        mGlobalTrackEtaMFT -> Write();
-        mGlobalTrackEtaMCH -> Write();
-        mGlobalTrackEtaMFTMCHMatchingChi2 -> Write();
-
-        mGlobalTrackMeanClusterSizeMuon -> Write();
-        mGlobalTrackPtMuon -> Write();
-        mGlobalTrackEtaMuon -> Write();
-        mGlobalTrackEtaMFTMuon -> Write();
-        mGlobalTrackEtaMCHMuon -> Write();
-        mGlobalTrackEtaMFTMCHMatchingChi2Muon -> Write();
-
-        mMIDMatchingChi2 -> Write();
-        mMFTMCHMatchingChi2 -> Write();
-        fOut -> Close();
-
     }
+
+    fOut -> cd();
+    mTrackClusterSize -> Write();
+    mTrackMeanClusterSize -> Write();
+    mTrackEta -> Write();
+
+    mGlobalTrackMeanClusterSize -> Write();
+    mGlobalTrackPt -> Write();
+    mGlobalTrackEta -> Write();
+    mGlobalTrackEtaMFT -> Write();
+    mGlobalTrackEtaMCH -> Write();
+    mGlobalTrackEtaMFTMCHMatchingChi2 -> Write();
+
+    mGlobalTrackMeanClusterSizeMuon -> Write();
+    mGlobalTrackPtMuon -> Write();
+    mGlobalTrackEtaMuon -> Write();
+    mGlobalTrackEtaMFTMuon -> Write();
+    mGlobalTrackEtaMCHMuon -> Write();
+    mGlobalTrackEtaMFTMCHMatchingChi2Muon -> Write();
+
+    mMIDMatchingChi2 -> Write();
+    mMFTMCHMatchingChi2 -> Write();
+
+    mTreeTrackClusterSizeData -> Write();
+    fOut -> Close();
 }
