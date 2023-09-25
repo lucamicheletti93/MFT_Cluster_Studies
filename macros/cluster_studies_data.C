@@ -302,8 +302,8 @@ void cluster_studies_data(){
             float xMCH = oneMchTrack.getX();
             float yMCH = oneMchTrack.getY();
             float pMCH = oneMchTrack.getP();
-            float pxMCH = oneMchTrack.getPz();
-            float pyMCH = oneMchTrack.getPz();
+            float pxMCH = oneMchTrack.getPx();
+            float pyMCH = oneMchTrack.getPy();
             float pzMCH = oneMchTrack.getPz();
 
             int chargeMCH = oneMchTrack.getSign();

@@ -41,7 +41,7 @@
 #include "TStyle.h"
 #include "TLatex.h"
 #include "CommonDataFormat/RangeReference.h"
-#include "DetectorsVertexing/DCAFitterN.h"
+//#include "DetectorsVertexing/DCAFitterN.h"
 
 //#include "CCDB/BasicCCDBManager.h"
 //#include "CCDB/CCDBTimeStampUtils.h"
@@ -64,12 +64,17 @@ using MCLabCont = o2::dataformats::MCTruthContainer<o2::MCCompLabel>;
 
 void cluster_studies_mc(){
 
-    string pathIn = "cross_check/mc";
+    //string pathIn = "cross_check/mc";
+    string pathIn = "/Users/lucamicheletti/cernbox/summer_student_mft_pid/mc/24_07_23_prod";
 
     TH1F *mTrackClusterSize = new TH1F("mMFTTrackClusterSize", "Cluster Size Per Track; # clusters; # entries", 100, 0.5, 100.5);
     TH1F *mTrackClusterSizeMC = new TH1F("mMFTTrackClusterSizeMC", "Cluster Size Per Track MC; # clusters; # entries", 100, 0.5, 100.5);
-    TH1F *mTrackMeanClusterSize = new TH1F("mMFTTrackMeanClusterSize", "Mean Cluster Size Per Track; # clusters; # entries", 200, 0.5, 10.5);
-    TH1F *mTrackMeanClusterSize3He = new TH1F("mTrackMeanClusterSize3He", "Mean Cluster Size Per Track 3He; # clusters; # entries", 200, 0.5, 10.5);
+    TH1F *mTrackMeanClusterSize = new TH1F("mMFTTrackMeanClusterSize", "Mean Cluster Size Per Track; # clusters; # entries", 100, 0.5, 20.5);
+    TH1F *mTrackMeanClusterSize3He = new TH1F("mTrackMeanClusterSize3He", "Mean Cluster Size Per Track 3He; # clusters; # entries", 100, 0.5, 20.5);
+    TH1F *mTrackMeanClusterSizeMu = new TH1F("mTrackMeanClusterSizeMu", "Mean Cluster Size Per Track Mu; # clusters; # entries", 100, 0.5, 20.5);
+    TH1F *mTrackMeanClusterSizePi = new TH1F("mTrackMeanClusterSizePi", "Mean Cluster Size Per Track Pi; # clusters; # entries", 100, 0.5, 20.5);
+    TH1F *mTrackMeanClusterSizeKaon = new TH1F("mTrackMeanClusterSizeKaon", "Mean Cluster Size Per Track Kaon; # clusters; # entries", 100, 0.5, 20.5);
+    TH1F *mTrackMeanClusterSizeProton = new TH1F("mTrackMeanClusterSizeProton", "Mean Cluster Size Per Track Proton; # clusters; # entries", 100, 0.5, 20.5);
 
     auto fIn = TFile("ccdb/o2_itsmft_TopologyDictionary_1320237.root"); // March 2022
     //auto fIn = TFile("ccdb/o2_itsmft_TopologyDictionary_0747987.root"); // December 2022
@@ -80,7 +85,7 @@ void cluster_studies_mc(){
     fMFTClusters -> ls();
     TFile *fMFTTracks = new TFile(Form("%s/mfttracks.root", pathIn.c_str()), "READ");
     fMFTTracks -> ls();
-    TFile *fMCTracks = new TFile(Form("%s/sgn_2_Kine.root", pathIn.c_str()), "READ");
+    TFile *fMCTracks = new TFile(Form("%s/sgn_1_Kine.root", pathIn.c_str()), "READ");
     fMCTracks -> ls();
 
     
@@ -127,6 +132,7 @@ void cluster_studies_mc(){
     // Alternative way to read the kinematics file -> not finalized
     //o2::steer::MCKinematicsReader mMCReader(Form("%s/sgn_2", pathIn.c_str()), o2::steer::MCKinematicsReader::Mode::kMCKine);
     
+    int myCounter = 0;
     std::cout << treeMFTClusters -> GetEntriesFast() << std::endl;
     for (int frame = 0; frame < treeMFTClusters -> GetEntriesFast(); frame++) {
         // LOOP OVER FRAMES  
@@ -190,6 +196,9 @@ void cluster_studies_mc(){
 
         //std::cout << mMFTTracks -> size() << std::endl;
         for (unsigned int iTrack{0}; iTrack < mMFTTracks -> size(); ++iTrack) {
+            if (myCounter>100) {
+				break;
+			}
             auto &oneTrack = mMFTTracks -> at(iTrack);
             auto ncls = oneTrack.getNumberOfPoints();
             auto offset = oneTrack.getExternalClusterIndexOffset();
@@ -203,7 +212,7 @@ void cluster_studies_mc(){
                 int  trackID, evID, srcID;
                 bool fake;
                 trackLabel.get(trackID, evID, srcID, fake);
-                LOG(info) << "(Labels info: trackID="<<trackID<<", eventID="<<evID<<", srcID="<<srcID;
+                //LOG(info) << "(Labels info: trackID="<<trackID<<", eventID="<<evID<<", srcID="<<srcID;
                 trackPDG = mcTracksMatrix[evID][trackID].GetPdgCode();
             } else {
                 continue;
@@ -215,7 +224,7 @@ void cluster_studies_mc(){
                 auto &patt = pattVec.at(clsEntry);
                 //auto globalCluster = mMFTClustersGlobal[clsEntry];
                 int npix = patt.getNPixels();
-                std::cout << npix << " + ";
+                std::cout << npix << " (" << clsEntry << ") + ";
 
                 mean += npix;
                 norm += 1;
@@ -226,14 +235,35 @@ void cluster_studies_mc(){
             if (TMath::Abs(trackPDG) == 1000020030) {
                 mTrackMeanClusterSize3He -> Fill(mean);
             }
+
+            if (TMath::Abs(trackPDG) == 13) {
+                mTrackMeanClusterSizeMu -> Fill(mean);
+            }
+
+            if (TMath::Abs(trackPDG) == 211) {
+                mTrackMeanClusterSizePi -> Fill(mean);
+            }
+
+            if (TMath::Abs(trackPDG) == 321) {
+                mTrackMeanClusterSizeKaon -> Fill(mean);
+            }
+
+            if (TMath::Abs(trackPDG) == 2212) {
+                mTrackMeanClusterSizeProton -> Fill(mean);
+            }
             //std::cout << std::endl;
+            myCounter++;
         }
 
-        TFile *fOut = new TFile(Form("%s/cross_check_mc.root", pathIn.c_str()), "RECREATE");
+        TFile *fOut = new TFile(Form("%s/cross_check_mc_test.root", pathIn.c_str()), "RECREATE");
         mTrackClusterSize -> Write();
         mTrackMeanClusterSize -> Write();
         mTrackClusterSizeMC -> Write();
         mTrackMeanClusterSize3He -> Write();
+        mTrackMeanClusterSizeMu -> Write();
+        mTrackMeanClusterSizePi -> Write();
+        mTrackMeanClusterSizeKaon -> Write();
+        mTrackMeanClusterSizeProton -> Write();
         fOut -> Close();
 
         return;
