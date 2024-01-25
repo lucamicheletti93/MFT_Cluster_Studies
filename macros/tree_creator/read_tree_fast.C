@@ -29,10 +29,15 @@
 
 #endif
 
-void read_treeIn_fast() {
+void read_tree_fast() {
+    //string dataset = "LHC23k6c_pass1";
+    //string dataset = "LHC23zs_pass2";
+    string dataset = "LHC23zzh_pass1_small";
+    
     float fPosX, fPosY, fPosZ, fPt, fEta, fPhi, fFwdDcaX, fFwdDcaY, fChi2MatchMCHMID, fChi2MatchMCHMFT = -99999;
     uint64_t fMftClusterSizesAndTrackFlags;
     UChar_t fTrackType;
+    int fSign;
 
     int mTrackType = -999;
     float mPt = -999;
@@ -55,7 +60,7 @@ void read_treeIn_fast() {
     int mClsizeLayer9 = -999;
     double mMeanClsizePerTrack = -999;
 
-    TFile *fOut = new TFile("/Users/lucamicheletti/cernbox/MTF_Cluster_Data/LHC23zzh_pass1_small/treeMftPidTraining.root", "RECREATE");
+    TFile *fOut = new TFile(Form("/Users/lucamicheletti/cernbox/MTF_Cluster_Data/%s/treeMftPidTraining.root", dataset.c_str()), "RECREATE");
     
     TTree *treeOut = new TTree("treeTrackClusterSizeData", "Tree with ClusterSize Data Info");
     treeOut -> Branch("mTrackType", &mTrackType, "mTrackType/I");
@@ -79,7 +84,8 @@ void read_treeIn_fast() {
     treeOut -> Branch("mClsizeLayer9", &mClsizeLayer9);
     treeOut -> Branch("mMeanClsizePerTrack", &mMeanClsizePerTrack);
 
-    string pathToFile = "/Users/lucamicheletti/cernbox/MTF_Cluster_Data/LHC23zzh_pass1_small/AO2D.root";
+    Printf("[info] Processing /Users/lucamicheletti/cernbox/MTF_Cluster_Data/%s/AO2D.root ...", dataset.c_str());
+    string pathToFile = Form("/Users/lucamicheletti/cernbox/MTF_Cluster_Data/%s/AO2D.root", dataset.c_str());
     TFile *fIn = new TFile(pathToFile.c_str(), "READ");
     TIter next(fIn -> GetListOfKeys()); 
     TKey *key; 
@@ -96,6 +102,7 @@ void read_treeIn_fast() {
         treeIn -> SetBranchAddress("fPt", &fPt);
         treeIn -> SetBranchAddress("fEta", &fEta);
         treeIn -> SetBranchAddress("fPhi", &fPhi);
+        treeIn -> SetBranchAddress("fSign", &fSign);
         treeIn -> SetBranchAddress("fFwdDcaX", &fFwdDcaX);
         treeIn -> SetBranchAddress("fFwdDcaY", &fFwdDcaY);
         treeIn -> SetBranchAddress("fChi2MatchMCHMID", &fChi2MatchMCHMID);
@@ -111,6 +118,9 @@ void read_treeIn_fast() {
             int nClusters = 0;
             for (int i = 0; i < 10; ++i) {
                 double size = (fMftClusterSizesAndTrackFlags >> (i * 6)) & 0x3fULL;
+                if (size > 62) {
+                    continue;
+                }
                 if (size > 0) {
                     meanClSize += size;
                     nClusters += 1;
@@ -157,7 +167,7 @@ void read_treeIn_fast() {
             mPt = fPt;
             mEta = fEta;
             mPhi = fPhi;
-            mSign = 0;
+            mSign = fSign;
             mMch2MCHMID = fChi2MatchMCHMID;
             mMch2MFTMCH = fChi2MatchMCHMFT;
             mFwdDcaX = fFwdDcaX;
@@ -169,6 +179,7 @@ void read_treeIn_fast() {
     }
     fIn -> Close();
 
+    Printf("[info] Saving output in /Users/lucamicheletti/cernbox/MTF_Cluster_Data/%s/treeMftPidTraining.root", dataset.c_str());
     fOut -> cd();
     treeOut -> Write();
     fOut -> Close();
