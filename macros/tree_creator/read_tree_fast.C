@@ -31,8 +31,8 @@
 
 void read_tree_fast() {
     //string dataset = "LHC23k6c_pass1";
-    //string dataset = "LHC23zs_pass2";
-    string dataset = "LHC23zzh_pass1_small";
+    string dataset = "LHC23zs_pass2";
+    //string dataset = "LHC23zzh_pass1_small";
     
     float fPosX, fPosY, fPosZ, fPt, fEta, fPhi, fFwdDcaX, fFwdDcaY, fChi2MatchMCHMID, fChi2MatchMCHMFT = -99999;
     uint64_t fMftClusterSizesAndTrackFlags;
