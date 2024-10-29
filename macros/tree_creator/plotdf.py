@@ -32,6 +32,16 @@ def plot_keys_from_parquet(parquet_file, output_dir):
     plt.close("all")
 
 
+    corrmatrix_fig = plot_utils.plot_corr(
+        [pd_df],
+        columns,
+        ["mip"]
+    )
+    plt.subplots_adjust(left=0.2, bottom=0.25, right=0.95, top=0.9)
+    corrmatrix_fig.savefig(f"{output_dir}/CorrAll.png")
+    plt.close("all")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Upload gzip.parquet file and plot every key in a single canvas"

@@ -25,7 +25,16 @@ def read_tree_fast(input_path, output_path, suffix=""):
         "mMch2MFTMCH": [],
         "mFwdDcaX": [],
         "mFwdDcaY": [],
-        "mClsizeLayer": [],
+        "mClsizeLayer0": [],
+        "mClsizeLayer1": [],
+        "mClsizeLayer2": [],
+        "mClsizeLayer3": [],
+        "mClsizeLayer4": [],
+        "mClsizeLayer5": [],
+        "mClsizeLayer6": [],
+        "mClsizeLayer7": [],
+        "mClsizeLayer8": [],
+        "mClsizeLayer9": [],
         "mMeanClsizePerTrack": [],
     }
 
@@ -89,7 +98,8 @@ def read_tree_fast(input_path, output_path, suffix=""):
                     output_data["mMch2MFTMCH"].append(fChi2MatchMCHMFT[i])
                     output_data["mFwdDcaX"].append(fFwdDcaX[i])
                     output_data["mFwdDcaY"].append(fFwdDcaY[i])
-                    output_data["mClsizeLayer"].append(clsize_layers)
+                    for ilayer, (clsize) in enumerate(clsize_layers):
+                        output_data[f"mClsizeLayer{ilayer}"].append(clsize)
                     output_data["mMeanClsizePerTrack"].append(mean_clsize_per_track)
                     bar()
 
@@ -108,7 +118,16 @@ def read_tree_fast(input_path, output_path, suffix=""):
             "mMch2MFTMCH": output_data["mMch2MFTMCH"],
             "mFwdDcaX": output_data["mFwdDcaX"],
             "mFwdDcaY": output_data["mFwdDcaY"],
-            "mClsizeLayer": output_data["mClsizeLayer"],
+            "mClsizeLayer0": output_data["mClsizeLayer0"],
+            "mClsizeLayer1": output_data["mClsizeLayer1"],
+            "mClsizeLayer2": output_data["mClsizeLayer2"],
+            "mClsizeLayer3": output_data["mClsizeLayer3"],
+            "mClsizeLayer4": output_data["mClsizeLayer4"],
+            "mClsizeLayer5": output_data["mClsizeLayer5"],
+            "mClsizeLayer6": output_data["mClsizeLayer6"],
+            "mClsizeLayer7": output_data["mClsizeLayer7"],
+            "mClsizeLayer8": output_data["mClsizeLayer8"],
+            "mClsizeLayer9": output_data["mClsizeLayer9"],
             "mMeanClsizePerTrack": output_data["mMeanClsizePerTrack"],
         }
     )
