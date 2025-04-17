@@ -146,6 +146,7 @@ void nuclei_mc_tree_reader() {
 
         for (int iEntry = 0;iEntry < treeIn -> GetEntries();iEntry++) {
             treeIn -> GetEntry(iEntry);
+            if (fEta > -2.5 || fEta < -3.6) continue;
             double meanClSize = 0;
             int nClusters = 0;
             for (int i = 0; i < 10; ++i) {
@@ -252,6 +253,7 @@ void nuclei_mc_tree_reader() {
 
     TCanvas *canvasEta = new TCanvas("canvasEta", "");
     gPad -> SetLogy(true);
+    histEta -> GetYaxis() -> SetRangeUser(1, 1e7);
     histEta -> Draw("EP");
     for (int iMcSignal = 0;iMcSignal < nMcSignals;iMcSignal++) {
         histEtaMcSignals[iMcSignal] -> Draw("H SAME");
