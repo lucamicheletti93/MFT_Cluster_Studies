@@ -25,6 +25,8 @@
 #include "THashList.h"
 #include "TProfile.h"
 #include "TTreeReader.h"
+#include "TGraphErrors.h"
+#include "TLine.h"
 #include <ROOT/RDataFrame.hxx>
 
 #endif
@@ -71,8 +73,14 @@ void nuclei_mc_tree_reader() {
     int mClsizeLayer9 = -999;
     double mMeanClsizePerTrack = -999;
 
+    TH1D *histMeanClSizeBkg = new TH1D("histMeanClSizeBkg", "; <Cluster Size>", 30, 0, 15); SetHist(histMeanClSizeBkg, kBlue, 20, 0.8, kBlue, 1, 0, 1);
+    TH1D *histMeanClSizeSig = new TH1D("histMeanClSizeSig", "; <Cluster Size>", 30, 0, 15); SetHist(histMeanClSizeSig, kRed, 20, 0.8, kRed, 1, 0, 1);
+
     TH1D *histMeanClSize = new TH1D("histMeanClSize", "; <Cluster Size>", 60, 0, 30); SetHist(histMeanClSize, kBlack, 20, 0.8, kBlack, 1, 0, 1);
     TH1D *histEta = new TH1D("histEta", "; #eta", 1000, -5, 5); SetHist(histEta, kBlack, 20, 0.8, kBlack, 1, 0, 1);
+    TH1D *histPosX = new TH1D("histPosX", "vtx_{x} ; x (cm)", 100, -0.2, 0.2); SetHist(histPosX, kBlack, 20, 0.8, kBlack, 1, 0, 1);
+    TH1D *histPosY = new TH1D("histPosY", "vtx_{y} ; y (cm)", 100, -0.2, 0.2); SetHist(histPosY, kBlack, 20, 0.8, kBlack, 1, 0, 1);
+    TH1D *histPosZ = new TH1D("histPosZ", "vtx_{z} ; z (cm)", 40, -20, 20); SetHist(histPosZ, kBlack, 20, 0.8, kBlack, 1, 0, 1);
     TH1D *histFwdDcaX = new TH1D("histFwdDcaX", "Fwd. DCA_{x} ; DCA_{x} (cm)", 200, -10, 10); SetHist(histFwdDcaX, kBlack, 20, 0.8, kBlack, 1, 0, 1);
     TH1D *histFwdDcaY = new TH1D("histFwdDcaY", "Fwd. DCA_{y} ; DCA_{y} (cm)", 200, -10, 10); SetHist(histFwdDcaY, kBlack, 20, 0.8, kBlack, 1, 0, 1);
     TH1D *histFwdDcaZ = new TH1D("histFwdDcaZ", "Fwd. DCA_{z} ; DCA_{z} (cm)", 200, -1, 19); SetHist(histFwdDcaZ, kBlack, 20, 0.8, kBlack, 1, 0, 1);
@@ -119,7 +127,7 @@ void nuclei_mc_tree_reader() {
         }
     }
 
-    TFile *fIn = new TFile("/Users/lucamicheletti/alice/local_train_test_mc_nuclei/reducedAO2D.root", "READ");
+    TFile *fIn = new TFile("/Users/lucamicheletti/alice/local_train_test_mc_nuclei/reducedAO2D_all_matched.root", "READ");
     TIter next(fIn -> GetListOfKeys()); 
     TKey *key; 
     while ((key = (TKey*) next())) { 
@@ -208,10 +216,20 @@ void nuclei_mc_tree_reader() {
             mFwdDcaZ = - TMath::SinH(mEta) * TMath::Sqrt(mFwdDcaX*mFwdDcaX + mFwdDcaY*mFwdDcaY);
             histMeanClSize -> Fill(meanClSize);
             histEta -> Fill(mEta);
+            histPosX -> Fill(fPosX);
+            histPosY -> Fill(fPosY);
+            histPosZ -> Fill(fPosZ);
             histFwdDcaX -> Fill(mFwdDcaX);
             histFwdDcaY -> Fill(mFwdDcaY);
             histFwdDcaZ -> Fill(mFwdDcaZ);
             histMcSignals -> AddBinContent(1, 1);
+
+            bool sigFlag = (fMcDecision >> 0) & 1;
+            if (sigFlag) {
+                histMeanClSizeSig -> Fill(meanClSize);
+            } else {
+                histMeanClSizeBkg -> Fill(meanClSize);
+            }
 
             for (int i = 0; i < nMcSignals; ++i) {
                 bool flag = (fMcDecision >> i) & 1;
@@ -258,6 +276,121 @@ void nuclei_mc_tree_reader() {
     for (int iMcSignal = 0;iMcSignal < nMcSignals;iMcSignal++) {
         histEtaMcSignals[iMcSignal] -> Draw("H SAME");
     }
+
+
+    std::cout << histMeanClSizeBkg -> FindFirstBinAbove(0) << " " << histMeanClSizeBkg -> FindLastBinAbove(0) << std::endl;
+    std::cout << histMeanClSizeSig -> FindFirstBinAbove(0) << " " << histMeanClSizeSig -> FindLastBinAbove(0) << std::endl;
+
+    double normBkg = histMeanClSizeBkg -> GetMaximum();
+    double normSig = histMeanClSizeSig -> GetMaximum();
+
+    //histMeanClSizeBkg -> Scale(1.e4 / normBkg);
+    //histMeanClSizeSig -> Scale(1.e2 / normSig);
+
+    int firstBin = histMeanClSizeBkg -> FindFirstBinAbove(0);
+    int lastBin = histMeanClSizeSig -> FindLastBinAbove(0);
+
+    double truePos, falsePos, trueNeg, falseNeg = 0;
+    int nBins = lastBin-firstBin;
+    std::vector<double> clSize, eff, pur, sigf;
+
+    for (int iBin = firstBin;iBin < lastBin;iBin++) {
+        truePos = histMeanClSizeSig -> Integral(iBin, lastBin);
+        falsePos = histMeanClSizeBkg -> Integral(iBin, lastBin);
+        falseNeg = histMeanClSizeSig -> Integral(firstBin, iBin);
+        trueNeg = histMeanClSizeBkg -> Integral(firstBin, iBin);
+
+        clSize.push_back(histMeanClSizeSig -> GetBinCenter(iBin));
+        eff.push_back(truePos / (truePos + falseNeg));
+        pur.push_back(truePos / (truePos + falsePos));
+        sigf.push_back(((truePos + falsePos) > 0) ? (truePos / TMath::Sqrt(truePos + falsePos)) : 0);
+    }
+
+    // Scale significance to the maximum
+    double maxSigf = *max_element(sigf.begin(), sigf.end());
+    for (int iBin = 0;iBin < int(sigf.size());iBin++) {
+        sigf[iBin] = sigf[iBin] / maxSigf;
+    }
+
+    TGraphErrors *graEffVsClSize = new TGraphErrors(nBins, &(clSize[0]), &(eff[0]), 0, 0);
+    SetHist(graEffVsClSize, kRed, 20, 0.8, kRed, 1, 0, 1);
+
+    TGraphErrors *graPurVsClSize = new TGraphErrors(nBins, &(clSize[0]), &(pur[0]), 0, 0);
+    SetHist(graPurVsClSize, kYellow+3, 20, 0.8, kYellow+3, 1, 0, 1);
+
+    TGraphErrors *graSigfVsClSize = new TGraphErrors(nBins, &(clSize[0]), &(sigf[0]), 0, 0);
+    SetHist(graSigfVsClSize, kAzure+4, 20, 0.8, kAzure+4, 1, 0, 1);
+    
+    TGraphErrors *graEffVsPur = new TGraphErrors(nBins, &(pur[0]), &(eff[0]), 0, 0);
+    SetHist(graEffVsPur, kBlack, 20, 0.8, kBlack, 1, 0, 1);
+
+
+    TCanvas *canvasEffVsPurVsSigf = new TCanvas("canvasEffVsPurVsSigf", "", 1200, 1200);
+    canvasEffVsPurVsSigf -> Divide(2, 2);
+
+    canvasEffVsPurVsSigf -> cd(1);
+    gPad -> SetLogy(true);
+    histMeanClSizeBkg -> GetXaxis() -> SetRangeUser(0., 15.);
+    histMeanClSizeBkg -> GetYaxis() -> SetRangeUser(0.5, 2e4);
+    histMeanClSizeBkg -> Draw("H");
+    histMeanClSizeSig -> Draw("H SAME");
+
+    canvasEffVsPurVsSigf -> cd(2);
+    TH2D *histGridEffVsPurVsSigf = new TH2D("histGridEffVsPurVsSigf", "; <Cluster Size>", 100, 4.5, 9.5, 100, 0.4, 1.5);
+    histGridEffVsPurVsSigf -> Draw();
+    graEffVsClSize -> Draw("EP SAME");
+    graPurVsClSize -> Draw("EP SAME");
+    graSigfVsClSize -> Draw("EP SAME");
+
+    TLegend *legendEffVsPurVsSigf = new TLegend(0.20, 0.70, 0.35, 0.90, " ", "brNDC");
+    legendEffVsPurVsSigf -> SetBorderSize(0);
+    legendEffVsPurVsSigf -> SetFillColor(10);
+    legendEffVsPurVsSigf -> SetFillStyle(1);
+    legendEffVsPurVsSigf -> SetLineStyle(0);
+    legendEffVsPurVsSigf -> SetLineColor(0);
+    legendEffVsPurVsSigf -> SetTextFont(42);
+    legendEffVsPurVsSigf -> SetTextSize(0.045);
+    legendEffVsPurVsSigf -> AddEntry(graEffVsClSize, "Efficiecny", "PL");
+    legendEffVsPurVsSigf -> AddEntry(graPurVsClSize, "Purity", "PL");
+    legendEffVsPurVsSigf -> AddEntry(graSigfVsClSize, "Significance", "PL");
+    legendEffVsPurVsSigf -> Draw("SAME");
+
+    canvasEffVsPurVsSigf -> cd(3);
+    TH2D *histGridEffVsPur = new TH2D("histGridEffVsPur", "; Purity; Efficiency", 100, 0.5, 1.2, 100, 0.5, 1.2);
+    gPad -> SetLogx(true);
+    gPad -> SetLogy(true);
+
+    TLine *lineX = new TLine(1, 0.5, 1, 1.2);
+    lineX -> SetLineStyle(kDashed);
+    lineX -> SetLineColor(kGray+1);
+
+    TLine *lineY = new TLine(0.5, 1, 1.2, 1);
+    lineY -> SetLineStyle(kDashed);
+    lineY -> SetLineColor(kGray+1);
+
+    histGridEffVsPur -> Draw();
+    lineX -> Draw("SAME");
+    lineY -> Draw("SAME");
+    graEffVsPur -> Draw("EP SAME");
+
+    canvasEffVsPurVsSigf -> SaveAs("qa_figures/efficiency_vs_purity.pdf");
+
+    return;
+
+    TCanvas *canvasPos = new TCanvas("canvasPos", "", 1200, 400);
+    canvasPos -> Divide(3, 1);
+
+    canvasPos -> cd(1);
+    gPad -> SetLogy(true);
+    histPosX -> Draw("EP");
+
+    canvasPos -> cd(2);
+    gPad -> SetLogy(true);
+    histPosY -> Draw("EP");
+
+    canvasPos -> cd(3);
+    gPad -> SetLogy(true);
+    histPosZ -> Draw("EP");
 
     TCanvas *canvasFwdDca = new TCanvas("canvasFwdDca", "", 1200, 800);
     canvasFwdDca -> Divide(3, 2);
